@@ -1,0 +1,16 @@
+{
+  "src\\stores\\authStore.ts": "55470263ab931598972abe8ebd84f6987d89a76ff56d6b7b3f78280f8cd3b327",
+  "src\\stores\\pointsStore.ts": "0d36f6817b75ea385317040e464eee26cf00bb39e145c655697c28d905b7da86",
+  "src\\stores\\posStore.ts": "9c06730a4d0a24f59e636e5e52740191705465fc56ff2b64f1ddf0cfe1aefb3b",
+  "src\\stores\\shiftStore.ts": "13dc3b8373fcf3129544c0c6ca70895e10e0f472b316dc6b8d55f74c2c76fccb",
+  "src\\stores\\tournamentStore.ts": "471c270cbd43df9bd8a163a7df926f26626561d8fb8f9efb79282fd3ff7a0f74",
+  "src\\types\\auth.ts": "9283947d8f7f95cedc8504e53e2c864a6e6adc588bb8a86136aa337c5b96aa76",
+  "src\\types\\points.ts": "a405fcd16fa422604c642cad785656b846fa95929ad2a0dca2ac33e97b50a8b7",
+  "src\\types\\pos.ts": "d7ba95dfaaa30f6d8eaf22ea4209ab718f3e3f5112e76a563792e8a8673b79c3",
+  "src\\types\\report.ts": "8aa785c1c0109c2e3ed8a70493a395e8d65b3920196631c46e3786644330656e",
+  "src\\types\\shift.ts": "15c43df39b535e8cf2f4d432bbc95532a350a25ef67074a402b2492279c63d5e",
+  "src\\types\\tournament.ts": "26155d5e2e3c6d172317f91eedb753169c25d237eeeb7b723e76dadb88aeb743",
+  "src\\routes\\AppRoutes.tsx": "dcbddbd5a07fcb2172b9553eb1e2e45cdcf50bdde8fdb45556e061ca29005c1e",
+  "src\\features\\auth\\ProtectedRoute.tsx": "776595a2e9b56c4719ace72a33e8774f41345dd436dbde24f21c22c3bf61275c",
+  "src\\mocks\\initialData.ts": "4c71bac2702eb704cbbd61cb1d228f2f864fd7cba1b084ef12f63cfa8a8d1373"
+}
