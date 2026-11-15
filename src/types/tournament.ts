@@ -1,4 +1,47 @@
-export type TourStatus = 'CREATED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+import type { TournamentPrizeConfiguration } from './tournamentPrizes';
+
+export type TourStatus = 'CREATED' | 'RUNNING' | 'PAUSED' | 'FINISHED' | 'COMPLETED' | 'CANCELLED';
+
+export interface TournamentStatistics {
+  totalStack: number;
+  entries: number;
+  uniquePlayers: number;
+  playersRemaining: number;
+}
+
+export type ChipIssueType = 'BUY_IN' | 'RE_ENTRY' | 'RE_BUY' | 'ADD_ON';
+export interface TournamentStatisticsChange {
+  id: string;
+  timestamp: string;
+  actor: { id: string; name: string; role: string };
+  type: ChipIssueType | 'CORRECTION' | 'ELIMINATION' | 'PLAYER_STACK' | 'CREATED' | 'RESET';
+  reason: string;
+  before: TournamentStatistics;
+  after: TournamentStatistics;
+  playerId?: string;
+  playerName?: string;
+  chipsIssued?: number;
+  previousPlayerStack?: number;
+  nextPlayerStack?: number;
+}
+
+export type StatisticsResult = { success: true } | { success: false; message: string };
+
+export interface TournamentFinalResults {
+  statistics: TournamentStatistics;
+  averageStack: number;
+  prizeConfiguration: TournamentPrizeConfiguration;
+  totalPrizePoints: number;
+  payouts: { place: number; percentage: number; points: number }[];
+  finalizedAt: string;
+  finalizedBy: { id: string; name: string; role: string };
+}
+
+export type TournamentBackground = (
+  | { source: 'default' | 'none' }
+  | { source: 'url'; url: string }
+  | { source: 'upload'; assetId: string; fileName: string }
+) & { overlay: number };
 
 export interface BlindLevel {
   id: string;
@@ -34,9 +77,16 @@ export interface BlindStructureConfig {
 
 export interface Tournament {
   id: string;
+  templateId?: string; // Required on persisted sessions; optional for legacy fixtures.
+  archivedAt?: string;
+  rewardBatchId?: string;
+  rewardStatus?: 'FINISHED' | 'TOP_REWARD_PENDING' | 'TOP_REWARD_APPROVED' | 'ARCHIVED';
+  entryStackOnly?: boolean; // New sessions forbid independent Re-buy/Add-on issuance.
   code: string;
   name: string;
   description?: string;
+  tourBackground?: TournamentBackground;
+  clockBackground?: TournamentBackground;
   startingChips: number;
   maxPlayers: number;
   registeredCount: number;
@@ -44,6 +94,11 @@ export interface Tournament {
   
   // Timing structure
   structure: BlindStructureConfig;
+  // Registration closes at the start of this LEVEL, optionally following a break.
+  registrationEndStageId?: string;
+  buyInCloseBreakId?: string;
+  buyInClosedAt?: string;
+  buyInCloseReason?: 'AUTO' | 'MANUAL';
   
   // Real-time Clock State
   currentStageIndex: number; // index in structure.stages
@@ -53,14 +108,19 @@ export interface Tournament {
   totalElapsedSeconds: number; // Total running time in seconds
   
   // Tournament lifecycle
-  scheduledStartTime: string;
+  scheduledStartTime?: string; // Legacy metadata only; not configured or displayed.
   startedAt?: string;
   endedAt?: string;
   pausedAt?: string;
 
   // Participants & Final results
   participants: TourParticipant[];
+  statistics?: TournamentStatistics;
+  statisticsHistory?: TournamentStatisticsChange[];
+  statisticsNeedsReview?: boolean;
+  finalResults?: TournamentFinalResults;
   totalPrizePool?: number;
+  prizeConfiguration?: TournamentPrizeConfiguration;
   firstPlacePrize?: number;
   placesPaid?: number;
   finalRanks?: {

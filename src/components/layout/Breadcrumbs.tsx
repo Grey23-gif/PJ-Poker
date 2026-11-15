@@ -5,7 +5,7 @@ import { ChevronRight, Home } from 'lucide-react';
 const routeNameMap: Record<string, string> = {
   pos: 'Cafe POS Bán Hàng',
   tours: 'Giải Đấu Poker',
-  clock: 'Đồng Hồ Giải Đấu',
+  clock: 'Giải đấu',
   'blind-structures': 'Cấu Trúc Blind',
   points: 'Quản Lý Điểm Hội Viên',
   leaderboard: 'Bảng Xếp Hạng',
@@ -28,9 +28,9 @@ export const Breadcrumbs: React.FC = () => {
   }
 
   return (
-    <nav aria-label="Đường dẫn trang" className="flex flex-wrap items-center gap-y-2 text-xs text-slate-400 pt-5 px-4 sm:px-6 xl:px-8">
-      <Link to="/" className="flex items-center hover:text-slate-200 transition-colors">
-        <Home className="w-3.5 h-3.5 mr-1 text-slate-400" />
+    <nav aria-label="Đường dẫn trang" className="flex flex-wrap items-center gap-y-2 text-xs text-muted pt-2.5 px-[var(--page-padding)]">
+      <Link to="/" className="flex items-center hover:text-content transition-colors">
+        <Home className="w-3.5 h-3.5 mr-1 text-muted" />
         <span>Trang Chủ</span>
       </Link>
 
@@ -41,13 +41,13 @@ export const Breadcrumbs: React.FC = () => {
 
         return (
           <React.Fragment key={to}>
-            <ChevronRight className="w-3.5 h-3.5 mx-2 text-slate-600" />
+            <ChevronRight className="w-3.5 h-3.5 mx-2 text-muted" />
             {isLast ? (
-              <span aria-current="page" className="font-semibold text-emerald-400 truncate max-w-[200px]">
+              <span aria-current="page" className="font-semibold text-success truncate max-w-[200px]">
                 {displayName}
               </span>
             ) : (
-              <Link to={segment === 'player' ? '/player/portal' : to} className="hover:text-slate-200 transition-colors">
+              <Link to={segment === 'player' ? '/player/portal' : to} className="hover:text-content transition-colors">
                 {displayName}
               </Link>
             )}

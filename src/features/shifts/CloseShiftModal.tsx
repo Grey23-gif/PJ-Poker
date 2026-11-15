@@ -52,30 +52,30 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md" title="Kết Thúc Ca & Kiểm Đếm Bàn Giao Tiền">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Shift Financial Overview */}
-        <div className="bg-surface border border-slate-800 rounded-xl p-4 text-xs space-y-2 text-slate-300">
+        <div className="bg-surface border border-line rounded-xl p-4 text-xs space-y-2 text-secondary">
           <div className="flex justify-between">
-            <span className="text-slate-400">Ca làm việc:</span>
-            <span className="font-bold text-slate-200">{shift.shiftName}</span>
+            <span className="text-muted">Ca làm việc:</span>
+            <span className="font-bold text-content">{shift.shiftName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Thu ngân kết ca:</span>
-            <span className="text-slate-200">{shift.cashierName}</span>
+            <span className="text-muted">Thu ngân kết ca:</span>
+            <span className="text-content">{shift.cashierName}</span>
           </div>
-          <div className="flex justify-between pt-1 border-t border-slate-800">
-            <span className="text-slate-400">1. Tiền mặt đầu ca (Két):</span>
+          <div className="flex justify-between pt-1 border-t border-line">
+            <span className="text-muted">1. Tiền mặt đầu ca (Két):</span>
             <span className="font-mono font-medium">{formatVND(shift.openingCash)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">2. Doanh thu tiền mặt theo bill ({summary.orderCount} đơn):</span>
-            <span className="font-mono font-bold text-emerald-400">+{formatVND(summary.cashRevenue)}</span>
+            <span className="text-muted">2. Doanh thu tiền mặt theo bill ({summary.orderCount} đơn):</span>
+            <span className="font-mono font-bold text-success">+{formatVND(summary.cashRevenue)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">3. Doanh thu VietQR (Chuyển khoản):</span>
-            <span className="font-mono text-amber-400">+{formatVND(summary.bankRevenue)}</span>
+            <span className="text-muted">3. Doanh thu VietQR (Chuyển khoản):</span>
+            <span className="font-mono text-warning">+{formatVND(summary.bankRevenue)}</span>
           </div>
-          <div className="flex justify-between pt-1.5 border-t border-slate-700 text-sm font-bold text-white">
+          <div className="flex justify-between pt-1.5 border-t border-line-strong text-sm font-bold text-content">
             <span>Tiền mặt lý thuyết phải có trong két (1+2):</span>
-            <span className="text-emerald-400">{formatVND(expectedDrawerTotal)}</span>
+            <span className="text-success">{formatVND(expectedDrawerTotal)}</span>
           </div>
         </div>
 
@@ -93,10 +93,10 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
         <div
           className={`p-3 rounded-xl border flex items-center justify-between text-xs font-semibold ${
             difference === 0
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-success'
               : difference > 0
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+              ? 'bg-amber-500/10 border-amber-500/30 text-warning'
+              : 'bg-rose-500/10 border-rose-500/30 text-danger'
           }`}
         >
           <div className="flex items-center gap-1.5">
@@ -117,21 +117,21 @@ export const CloseShiftModal: React.FC<CloseShiftModalProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label className="block text-xs font-medium text-secondary mb-1.5">
             Ghi chú bàn giao ca
           </label>
           <textarea
             value={handoverNotes}
             onChange={(e) => setHandoverNotes(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-field border border-line-strong/80 rounded-lg p-2.5 text-xs text-content placeholder-muted focus:outline-none focus:border-emerald-500"
             rows={2}
             placeholder="Ghi chú tình trạng két tiền, hóa đơn hoặc bàn giao ca sau..."
           />
         </div>
 
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        {error && <p className="text-xs text-danger font-medium">{error}</p>}
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
           <Button variant="secondary" type="button" onClick={onClose}>
             Hủy Bỏ
           </Button>

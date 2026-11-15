@@ -67,13 +67,13 @@ export const RoleMatrixPage: React.FC = () => {
   const modules = Array.from(new Set(ALL_PERMISSIONS.map((p) => p.module)));
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-[var(--section-gap)] max-w-6xl mx-auto">
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-semibold text-white flex flex-wrap items-center gap-2">
+        <h1 className="page-title text-2xl font-semibold text-content flex flex-wrap items-center gap-2">
           Ma Trận Phân Quyền & Vai Trò
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400">
+        <p className="text-xs sm:text-sm text-muted">
           Thiết lập quyền truy cập chi tiết từng phân hệ cho Quản Trị Viên, Thu Ngân và Hội Viên
         </p>
       </div>
@@ -92,18 +92,18 @@ export const RoleMatrixPage: React.FC = () => {
               onClick={() => handleRoleSelect(config.role)}
               className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                 isSelected
-                  ? 'bg-emerald-950/30 border-emerald-500 shadow-glow-green'
-                  : 'bg-surface border-slate-800 hover:border-slate-700'
+                  ? 'bg-success/10 border-emerald-500'
+                  : 'bg-surface border-line hover:border-line-strong'
               }`}
             >
               <div className="flex items-center justify-between">
                 <StatusBadge status={config.role} />
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-muted font-mono">
                   {config.permissions.length} quyền
                 </span>
               </div>
-              <h4 className="font-bold text-slate-100 text-sm mt-2">{config.name}</h4>
-              <p className="text-xs text-slate-400 mt-1 line-clamp-2">{config.description}</p>
+              <h4 className="font-bold text-content text-sm mt-2">{config.name}</h4>
+              <p className="text-xs text-muted mt-1 line-clamp-2">{config.description}</p>
             </div>
           );
         })}
@@ -114,17 +114,17 @@ export const RoleMatrixPage: React.FC = () => {
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <CardTitle>
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <ShieldCheck className="w-5 h-5 text-success" />
               Chi Tiết Quyền Của Vai Trò: {selectedRole}
             </CardTitle>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Bật hoặc tắt các chức năng cụ thể để kiểm soát phân quyền thời gian thực
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {isSaved && (
-              <span className="text-xs text-emerald-400 font-medium flex items-center gap-1 animate-fade-in">
+              <span className="text-xs text-success font-medium flex items-center gap-1 animate-fade-in">
                 <Check className="w-4 h-4" /> Đã cập nhật thành công!
               </span>
             )}
@@ -140,10 +140,10 @@ export const RoleMatrixPage: React.FC = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-[var(--section-gap)]">
           {selectedRole === 'ADMIN' && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-warning flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-warning" />
               <span>
                 Quản Trị Viên (Admin) mặc định có toàn quyền truy cập tất cả các phân hệ và không thể hủy kích hoạt.
               </span>
@@ -155,12 +155,12 @@ export const RoleMatrixPage: React.FC = () => {
 
             return (
               <div key={moduleName} className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 pb-1 border-b border-slate-800">
+                <h4 className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 pb-1 border-b border-line">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   Phân Hệ: {moduleName}
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {modulePerms.map((perm) => {
                     const isChecked =
                       selectedRole === 'ADMIN' || activePermissions.includes(perm.code);
@@ -170,10 +170,10 @@ export const RoleMatrixPage: React.FC = () => {
                         key={perm.id}
                         className={`p-3 rounded-xl border text-xs flex items-start gap-3 transition-colors ${
                           selectedRole === 'ADMIN'
-                            ? 'bg-slate-900/40 border-slate-800 cursor-not-allowed opacity-80'
+                            ? 'bg-field/40 border-line cursor-not-allowed opacity-80'
                             : isChecked
                             ? 'bg-emerald-500/10 border-emerald-500/40 cursor-pointer'
-                            : 'bg-surface border-slate-800 hover:border-slate-700 cursor-pointer'
+                            : 'bg-surface border-line hover:border-line-strong cursor-pointer'
                         }`}
                       >
                         <input
@@ -182,12 +182,12 @@ export const RoleMatrixPage: React.FC = () => {
                           disabled={selectedRole === 'ADMIN'}
                           onChange={() => togglePermission(perm.code)}
                           aria-label={perm.name}
-                          className="mt-0.5 rounded text-emerald-500 focus:ring-emerald-500 w-4 h-4"
+                          className="mt-0.5 rounded text-success focus:ring-emerald-500 w-4 h-4"
                         />
                         <span className="space-y-0.5">
-                          <span className="block font-semibold text-slate-200">{perm.name}</span>
-                          <span className="block font-mono text-xs text-slate-400">[{perm.code}]</span>
-                          <span className="block text-xs text-slate-400 mt-1">{perm.description}</span>
+                          <span className="block font-semibold text-content">{perm.name}</span>
+                          <span className="block font-mono text-xs text-muted">[{perm.code}]</span>
+                          <span className="block text-xs text-muted mt-1">{perm.description}</span>
                         </span>
                       </label>
                     );
@@ -203,10 +203,10 @@ export const RoleMatrixPage: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>
-            <History className="w-4 h-4 text-slate-400" />
+            <History className="w-4 h-4 text-muted" />
             Nhật Ký Thay Đổi Phân Quyền (Audit Trail)
           </CardTitle>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             Ghi nhận các lượt điều chỉnh vai trò và quyền hạn quản trị
           </p>
         </CardHeader>
@@ -214,13 +214,13 @@ export const RoleMatrixPage: React.FC = () => {
           {auditLogs.map((log) => (
             <div
               key={log.id}
-              className="p-3 bg-surface rounded-xl border border-slate-800 flex items-center justify-between text-xs"
+              className="p-3 bg-surface rounded-xl border border-line flex items-center justify-between text-xs"
             >
               <div>
-                <span className="font-semibold text-slate-200">{log.user}: </span>
-                <span className="text-slate-300">{log.text}</span>
+                <span className="font-semibold text-content">{log.user}: </span>
+                <span className="text-secondary">{log.text}</span>
               </div>
-              <span className="text-xs text-slate-500 shrink-0 ml-2">{log.time}</span>
+              <span className="text-xs text-muted shrink-0 ml-2">{log.time}</span>
             </div>
           ))}
         </CardContent>

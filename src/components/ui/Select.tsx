@@ -13,9 +13,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const messageId = `${selectId}-message`;
 
     return (
-      <div className="w-full">
+      <div className="w-full min-w-0">
         {label && (
-          <label htmlFor={selectId} className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label htmlFor={selectId} className="block text-[length:var(--form-label-size)] font-medium text-secondary mb-[var(--form-label-gap)]">
             {label}
           </label>
         )}
@@ -24,15 +24,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? messageId : undefined}
           ref={ref}
-          className={`w-full bg-slate-900 border ${
-            error ? 'border-rose-500 focus:border-rose-500' : 'border-slate-700/80 focus:border-emerald-500'
-          } text-slate-100 text-sm rounded-[10px] min-h-11 py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-150 disabled:bg-slate-800 disabled:cursor-not-allowed ${className}`}
+          className={`w-full min-w-0 max-w-full bg-field border ${
+            error ? 'border-rose-500 focus:border-rose-500' : 'border-line-strong/80 focus:border-emerald-500'
+          } text-content text-sm leading-5 rounded-[10px] min-h-[var(--input-height)] py-[var(--control-padding-y)] px-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all duration-150 disabled:bg-raised disabled:cursor-not-allowed ${className}`}
           {...props}
         >
           {children}
         </select>
-        {error && <p id={messageId} role="alert" className="mt-1.5 text-xs text-rose-400">{error}</p>}
-        {helperText && !error && <p id={messageId} className="mt-1 text-xs text-slate-400">{helperText}</p>}
+        {error && <p id={messageId} role="alert" className="mt-1.5 text-xs text-danger">{error}</p>}
+        {helperText && !error && <p id={messageId} className="mt-1 text-xs text-muted">{helperText}</p>}
       </div>
     );
   }

@@ -38,7 +38,7 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="4xl" title="Lịch Sử Đơn Hàng Cafe & Hóa Đơn POS">
       <div className="space-y-4">
         {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-surface p-3 rounded-xl border border-slate-800">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-surface p-3 rounded-xl border border-line">
           <div className="w-full sm:w-72">
             <Input
               aria-label="Tìm theo số hóa đơn, tên khách, số bàn..."
@@ -50,12 +50,12 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
-            <span className="text-slate-400">Trạng thái:</span>
+            <span className="text-muted">Trạng thái:</span>
             <select
               aria-label="Lọc theo trạng thái"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="bg-raised border border-line-strong text-content text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
             >
               <option value="ALL">Tất cả ({orders.length})</option>
               <option value="COMPLETED">Hoàn thành ({orders.filter(o => o.status === 'COMPLETED').length})</option>
@@ -65,9 +65,9 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
         </div>
 
         {/* Orders Table */}
-        <div className="overflow-x-auto max-h-[55vh] border border-slate-800 rounded-xl">
+        <div className="overflow-x-auto max-h-[55vh] border border-line rounded-xl">
           <table className="w-full text-xs text-left">
-            <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 font-medium">
+            <thead className="sticky top-0 bg-field border-b border-line text-muted font-medium">
               <tr>
                 <th className="py-2.5 px-3">Mã đơn</th>
                 <th className="py-2.5 px-3">Thời gian</th>
@@ -79,33 +79,33 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
                 <th className="py-2.5 px-3 text-center">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-line/60">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500">
+                  <td colSpan={8} className="py-8 text-center text-muted">
                     Không tìm thấy đơn hàng nào phù hợp.
                   </td>
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-2.5 px-3 font-mono font-bold text-slate-200">
+                  <tr key={order.id} className="hover:bg-raised/40 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-bold text-content">
                       {order.orderNumber}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-400">
+                    <td className="py-2.5 px-3 text-muted">
                       {formatDateTime(order.createdAt)}
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-semibold text-slate-200">{order.tableNumber}</div>
-                      <div className="text-xs text-slate-400">{order.customerName}</div>
+                      <div className="font-semibold text-content">{order.tableNumber}</div>
+                      <div className="text-xs text-muted">{order.customerName}</div>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-300">{order.cashierName}</td>
+                    <td className="py-2.5 px-3 text-secondary">{order.cashierName}</td>
                     <td className="py-2.5 px-3">
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium text-secondary">
                         {order.paymentMethod === 'CASH' ? 'Tiền mặt' : 'VietQR'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-400 text-sm">
+                    <td className="py-2.5 px-3 text-right font-bold text-success text-sm">
                       {formatVND(order.totalAmount)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
@@ -118,7 +118,7 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => onSelectReceipt(order)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-raised hover:bg-raised text-secondary hover:text-content transition-colors"
                           title="Xem & in hóa đơn"
                         >
                           <Printer className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ export const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
                         {order.status === 'COMPLETED' && (
                           <button
                             onClick={() => setOrderToCancel(order)}
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
+                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-danger border border-rose-500/30 transition-colors"
                             title="Hủy hóa đơn này"
                           >
                             <Ban className="w-3.5 h-3.5" />

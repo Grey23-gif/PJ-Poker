@@ -80,3 +80,4 @@ export function formatChipK(amount: number): string {
   }
   return `${inM.toFixed(1).replace('.', ',')}M`;
 }
+export const formatRewardPoints = (value: number) => value.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

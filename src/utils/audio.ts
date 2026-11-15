@@ -2,6 +2,9 @@
 // No external MP3 downloads required - works 100% reliably in any modern browser!
 
 let audioCtx: AudioContext | null = null;
+let soundEnabled = true;
+export const isTournamentSoundEnabled = () => soundEnabled;
+export const setTournamentSoundEnabled = (enabled: boolean) => { soundEnabled = enabled; };
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -18,6 +21,7 @@ function getAudioContext(): AudioContext {
  * Play a crystal chime when a blind level advances
  */
 export function playLevelUpSound() {
+  if (!soundEnabled) return;
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;
@@ -66,6 +70,7 @@ export function playLevelUpSound() {
  * Warning beep for final countdown seconds
  */
 export function playCountdownBeep(isFinal: boolean = false) {
+  if (!soundEnabled) return;
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;
@@ -90,6 +95,7 @@ export function playCountdownBeep(isFinal: boolean = false) {
  * Break sound notification
  */
 export function playBreakSound() {
+  if (!soundEnabled) return;
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;

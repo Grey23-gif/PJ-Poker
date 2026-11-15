@@ -27,12 +27,12 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#070b14] text-white flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto mb-4">
+        <div className="min-h-screen bg-canvas text-content flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-danger flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Đã Xảy Ra Lỗi Giao Diện</h2>
-          <p className="text-xs text-slate-400 max-w-md mx-auto mb-4 font-mono bg-slate-900 p-3 rounded-xl border border-slate-800 text-left overflow-auto max-h-36">
+          <h2 className="text-xl font-bold text-content mb-2">Đã Xảy Ra Lỗi Giao Diện</h2>
+          <p className="text-xs text-muted max-w-md mx-auto mb-4 font-mono bg-field p-3 rounded-xl border border-line text-left overflow-auto max-h-36">
             {this.state.error?.message || 'Lỗi không xác định'}
           </p>
           <div className="flex items-center gap-3">
@@ -41,13 +41,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 this.setState({ hasError: false, error: null });
                 window.location.reload();
               }}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" /> Tải Lại Trang
             </button>
             <a
               href="/"
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-raised hover:bg-raised text-content font-semibold text-xs flex items-center gap-2"
             >
               <Home className="w-4 h-4" /> Về Bảng Điều Khiển
             </a>

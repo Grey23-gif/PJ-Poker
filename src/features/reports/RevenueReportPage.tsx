@@ -106,8 +106,8 @@ export const RevenueReportPage: React.FC = () => {
 
   // Payment Breakdown
   const paymentBreakdownData = [
-    { name: 'Tiền mặt (Cash)', value: totalCash || 155000, color: '#10b981' },
-    { name: 'Chuyển khoản (VietQR)', value: totalBank || 190000, color: '#f59e0b' },
+    { name: 'Tiền mặt (Cash)', value: totalCash || 155000, color: 'var(--chart-green)' },
+    { name: 'Chuyển khoản (VietQR)', value: totalBank || 190000, color: 'var(--chart-gold)' },
   ];
 
   // CSV Export Handler
@@ -135,24 +135,24 @@ export const RevenueReportPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-[var(--section-gap)] max-w-7xl mx-auto">
       {/* Title & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[var(--component-gap)]">
         <div>
-          <h1 className="text-2xl font-semibold text-white flex flex-wrap items-center gap-2">
+          <h1 className="page-title text-2xl font-semibold text-content flex flex-wrap items-center gap-2">
             Báo Cáo Doanh Thu & Phân Tích Dịch Vụ
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-muted">
             Thống kê doanh số bán hàng Cafe, phân bổ theo ca, nhân viên thu ngân và cơ cấu thanh toán
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-1 flex text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="bg-field border border-line-strong rounded-xl p-1 flex flex-wrap text-xs [&_button]:min-h-[var(--button-height)]">
             <button
               onClick={() => setDateRange('7DAYS')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                dateRange === '7DAYS' ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:text-white'
+                dateRange === '7DAYS' ? 'bg-emerald-700 text-white' : 'text-muted hover:text-content'
               }`}
             >
               7 ngày
@@ -160,7 +160,7 @@ export const RevenueReportPage: React.FC = () => {
             <button
               onClick={() => setDateRange('30DAYS')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                dateRange === '30DAYS' ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:text-white'
+                dateRange === '30DAYS' ? 'bg-emerald-700 text-white' : 'text-muted hover:text-content'
               }`}
             >
               30 ngày
@@ -168,7 +168,7 @@ export const RevenueReportPage: React.FC = () => {
             <button
               onClick={() => setDateRange('THIS_MONTH')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                dateRange === 'THIS_MONTH' ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:text-white'
+                dateRange === 'THIS_MONTH' ? 'bg-emerald-700 text-white' : 'text-muted hover:text-content'
               }`}
             >
               Tháng này
@@ -187,13 +187,13 @@ export const RevenueReportPage: React.FC = () => {
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-[var(--component-gap)]">
         <StatsCard
           title="Tổng Doanh Thu Hợp Lệ"
           value={formatVND(totalRevenue)}
           change={{ value: '+18.2%', isPositive: true }}
-          icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-          iconBgColor="bg-emerald-500/10 text-emerald-400"
+          icon={<DollarSign className="w-5 h-5 text-success" />}
+          iconBgColor="bg-emerald-500/10 text-success"
           glow="green"
         />
 
@@ -201,16 +201,16 @@ export const RevenueReportPage: React.FC = () => {
           title="Doanh Thu Tiền Mặt"
           value={formatVND(totalCash)}
           subValue="Chiếm 45% tổng doanh số"
-          icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-          iconBgColor="bg-emerald-500/10 text-emerald-400"
+          icon={<DollarSign className="w-5 h-5 text-success" />}
+          iconBgColor="bg-emerald-500/10 text-success"
         />
 
         <StatsCard
           title="Doanh Thu Chuyển Khoản"
           value={formatVND(totalBank)}
           subValue="Chiếm 55% qua VietQR"
-          icon={<CreditCard className="w-5 h-5 text-amber-400" />}
-          iconBgColor="bg-amber-500/10 text-amber-400"
+          icon={<CreditCard className="w-5 h-5 text-warning" />}
+          iconBgColor="bg-amber-500/10 text-warning"
           glow="gold"
         />
 
@@ -218,31 +218,31 @@ export const RevenueReportPage: React.FC = () => {
           title="Hóa Đơn Đã Hủy"
           value={cancelledOrders.length}
           subValue={formatVND(cancelledRevenue)}
-          icon={<RotateCcw className="w-5 h-5 text-rose-400" />}
-          iconBgColor="bg-rose-500/10 text-rose-400"
+          icon={<RotateCcw className="w-5 h-5 text-danger" />}
+          iconBgColor="bg-rose-500/10 text-danger"
         />
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Left 2 Cols: Revenue Trend Chart */}
-        <Card className="lg:col-span-2">
+        <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-success" />
               Biểu Đồ Doanh Thu Theo Ngày & Phân Bổ Tiền Mặt / VietQR
             </CardTitle>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-muted mt-0.5">
               So sánh cơ cấu doanh thu theo từng ngày trong tuần
             </p>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueByDayData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="date" stroke="var(--color-muted)" fontSize={11} />
                 <YAxis
-                  stroke="#64748b"
+                  stroke="var(--color-muted)"
                   fontSize={11}
                   tickFormatter={(v) => `${v / 1000000}M`}
                 />
@@ -251,13 +251,13 @@ export const RevenueReportPage: React.FC = () => {
                     formatVND(Number(value) || 0),
                     name === 'cash' ? 'Tiền mặt' : name === 'bank' ? 'VietQR' : 'Tổng',
                   ]}
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
                 />
                 <Legend
                   formatter={(val) => (val === 'cash' ? 'Tiền mặt' : 'VietQR (Chuyển khoản)')}
                 />
-                <Bar dataKey="cash" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="bank" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cash" stackId="a" fill="var(--chart-green)" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="bank" stackId="a" fill="var(--chart-gold)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -267,7 +267,7 @@ export const RevenueReportPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Cơ Cấu Phương Thức Thanh Toán</CardTitle>
-            <p className="text-xs text-slate-400 mt-0.5">Tỷ lệ thanh toán không tiền mặt vs tiền mặt</p>
+            <p className="text-xs text-muted mt-0.5">Tỷ lệ thanh toán không tiền mặt vs tiền mặt</p>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center h-80">
             <ResponsiveContainer width="100%" height={200}>
@@ -287,24 +287,24 @@ export const RevenueReportPage: React.FC = () => {
                 </Pie>
                 <Tooltip
                   formatter={(val: any) => [formatVND(Number(val) || 0), 'Doanh thu']}
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="w-full space-y-2 mt-3 text-xs">
-              <div className="flex justify-between items-center bg-surface p-2 rounded-lg border border-slate-800">
+              <div className="flex justify-between items-center bg-surface p-2 rounded-lg border border-line">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span className="text-slate-300">Tiền mặt:</span>
+                  <span className="text-secondary">Tiền mặt:</span>
                 </div>
-                <strong className="text-emerald-400">{formatVND(totalCash)}</strong>
+                <strong className="text-success">{formatVND(totalCash)}</strong>
               </div>
-              <div className="flex justify-between items-center bg-surface p-2 rounded-lg border border-slate-800">
+              <div className="flex justify-between items-center bg-surface p-2 rounded-lg border border-line">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-amber-500" />
-                  <span className="text-slate-300">VietQR:</span>
+                  <span className="text-secondary">VietQR:</span>
                 </div>
-                <strong className="text-amber-400">{formatVND(totalBank)}</strong>
+                <strong className="text-warning">{formatVND(totalBank)}</strong>
               </div>
             </div>
           </CardContent>
@@ -312,20 +312,20 @@ export const RevenueReportPage: React.FC = () => {
       </div>
 
       {/* Top-Selling Products & Shifts Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--section-gap)]">
         {/* Top Selling Products List */}
         <Card>
           <CardHeader>
             <CardTitle>
-              <ShoppingBag className="w-4 h-4 text-emerald-400" />
+              <ShoppingBag className="w-4 h-4 text-success" />
               Top Món Cafe & Snack Bán Chạy Nhất
             </CardTitle>
-            <p className="text-xs text-slate-400 mt-0.5">Xếp hạng theo doanh số và số lượng phục vụ</p>
+            <p className="text-xs text-muted mt-0.5">Xếp hạng theo doanh số và số lượng phục vụ</p>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Bảng báo cáo có thể cuộn" className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-surface text-slate-400 font-semibold border-b border-slate-800">
+                <thead className="bg-surface text-muted font-semibold border-b border-line">
                   <tr>
                     <th className="py-2.5 px-4">#</th>
                     <th className="py-2.5 px-4">Tên món</th>
@@ -333,15 +333,15 @@ export const RevenueReportPage: React.FC = () => {
                     <th className="py-2.5 px-4 text-right">Doanh số</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-line/60">
                   {displayTopProducts.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-slate-800/30">
-                      <td className="py-2.5 px-4 font-bold text-slate-400 w-10">#{idx + 1}</td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-200">{p.name}</td>
-                      <td className="py-2.5 px-4 text-center text-slate-300 font-bold">
+                    <tr key={idx} className="hover:bg-raised/30">
+                      <td className="py-2.5 px-4 font-bold text-muted w-10">#{idx + 1}</td>
+                      <td className="py-2.5 px-4 font-semibold text-content">{p.name}</td>
+                      <td className="py-2.5 px-4 text-center text-secondary font-bold">
                         {p.quantity} phần
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-emerald-400">
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-success">
                         {formatVND(p.revenue)}
                       </td>
                     </tr>
@@ -356,26 +356,26 @@ export const RevenueReportPage: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              <BarChart3 className="w-4 h-4 text-amber-400" />
+              <BarChart3 className="w-4 h-4 text-warning" />
               Doanh Thu Theo Ca Làm Việc
             </CardTitle>
-            <p className="text-xs text-slate-400 mt-0.5">Hiệu suất doanh số giữa các ca trực thu ngân</p>
+            <p className="text-xs text-muted mt-0.5">Hiệu suất doanh số giữa các ca trực thu ngân</p>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={shiftRevenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="shiftName" stroke="#64748b" fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="shiftName" stroke="var(--color-muted)" fontSize={11} />
                 <YAxis
-                  stroke="#64748b"
+                  stroke="var(--color-muted)"
                   fontSize={11}
                   tickFormatter={(v) => `${v / 1000000}M`}
                 />
                 <Tooltip
                   formatter={(val: any) => [formatVND(Number(val) || 0), 'Doanh thu']}
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: 'var(--color-card)', color: 'var(--color-foreground)', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
                 />
-                <Bar dataKey="revenue" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" fill="var(--chart-green)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

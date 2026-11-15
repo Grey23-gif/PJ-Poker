@@ -16,7 +16,7 @@ export interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className = '' }) => {
   return (
-    <div className={`flex items-center space-x-1 border-b border-slate-800 p-1 overflow-x-auto ${className}`}>
+    <div role="group" aria-label="Chọn mục hiển thị" className={`flex max-w-full min-w-0 items-center space-x-1 border-b border-line p-1 overflow-x-auto ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -25,10 +25,10 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
             type="button"
             aria-pressed={isActive}
             onClick={() => onChange(tab.id)}
-            className={`flex items-center gap-2 min-h-11 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+            className={`flex shrink-0 items-center gap-2 min-h-[var(--button-height)] px-3 py-1.5 text-sm leading-5 font-medium rounded-lg transition-colors whitespace-nowrap ${
               isActive
-                ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/80'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-raised text-success shadow-sm border border-line-strong/80'
+                : 'text-muted hover:text-content hover:bg-raised/40'
             }`}
           >
             {tab.icon && <span className="shrink-0">{tab.icon}</span>}
@@ -37,8 +37,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
               <span
                 className={`ml-1 px-1.5 py-0.5 text-xs font-semibold rounded-full ${
                   isActive
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-slate-700/60 text-slate-400'
+                    ? 'bg-emerald-500/20 text-success'
+                    : 'bg-raised/60 text-muted'
                 }`}
               >
                 {tab.badge}

@@ -1,6 +1,16 @@
+import type { TournamentFinalResults } from './tournament';
+
 export type PointRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type PointType = 'TOUR_REWARD' | 'MANUAL_BONUS' | 'EVENT' | 'PENALTY';
+
+export interface TopTourAssignment {
+  rank: number;
+  memberId: string;
+  playerName: string;
+  playerPhone: string;
+  points: number;
+}
 
 export interface PointRequest {
   id: string;
@@ -14,6 +24,12 @@ export interface PointRequest {
   tournamentId?: string;
   tournamentName?: string;
   tournamentRank?: number;
+  sessionId?: string;
+  templateId?: string;
+  sessionDate?: string;
+  rewardSnapshot?: TournamentFinalResults;
+  topAssignments?: TopTourAssignment[];
+  archivedAt?: string;
   status: PointRequestStatus;
   requestedBy: {
     id: string;
@@ -38,6 +54,9 @@ export interface PointTransaction {
   type: PointType;
   description: string;
   referenceId?: string; // PointRequest id or Tour id
+  requestId?: string;
+  sessionId?: string;
+  topRank?: number;
   createdByName: string;
   createdAt: string;
 }

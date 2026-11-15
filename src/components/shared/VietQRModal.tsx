@@ -37,7 +37,7 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md" title="Thanh Toán Chuyển Khoản VietQR">
       <div className="space-y-4">
         {/* QR Code Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col items-center text-center">
+        <div className="bg-field border border-line rounded-xl p-4 flex flex-col items-center text-center">
           <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-200 mb-3">
             {/* SVG Simulated VietQR Code */}
             <svg
@@ -103,36 +103,36 @@ export const VietQRModal: React.FC<VietQRModalProps> = ({
             </svg>
           </div>
 
-          <div className="text-xl font-bold text-amber-400">
+          <div className="text-xl font-bold text-warning">
             {formatVND(totalAmount)}
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">Quét mã bằng ứng dụng ngân hàng bất kỳ (24/7)</p>
+          <p className="text-xs text-muted mt-0.5">Quét mã bằng ứng dụng ngân hàng bất kỳ (24/7)</p>
         </div>
 
         {/* Bank Details */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-3 text-xs space-y-2 text-slate-300">
+        <div className="bg-field/60 border border-line rounded-lg p-3 text-xs space-y-2 text-secondary">
           <div className="flex justify-between">
-            <span className="text-slate-400">Ngân hàng:</span>
-            <span className="font-semibold text-slate-200">{bankName}</span>
+            <span className="text-muted">Ngân hàng:</span>
+            <span className="font-semibold text-content">{bankName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Số tài khoản:</span>
-            <span className="font-mono font-bold text-emerald-400">{accountNumber}</span>
+            <span className="text-muted">Số tài khoản:</span>
+            <span className="font-mono font-bold text-success">{accountNumber}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">Chủ tài khoản:</span>
-            <span className="font-semibold text-slate-200">{accountHolder}</span>
+            <span className="text-muted">Chủ tài khoản:</span>
+            <span className="font-semibold text-content">{accountHolder}</span>
           </div>
-          <div className="flex justify-between items-center pt-1 border-t border-slate-800">
-            <span className="text-slate-400">Nội dung CK:</span>
-            <div className="flex items-center gap-1.5 font-mono font-bold text-yellow-400 bg-slate-800/80 px-2 py-0.5 rounded">
+          <div className="flex justify-between items-center pt-1 border-t border-line">
+            <span className="text-muted">Nội dung CK:</span>
+            <div className="flex items-center gap-1.5 font-mono font-bold text-warning bg-raised/80 px-2 py-0.5 rounded">
               <span>{transferContent}</span>
               <button
                 onClick={handleCopyContent}
-                className="text-slate-400 hover:text-white p-0.5"
+                className="text-muted hover:text-content p-0.5"
                 title="Sao chép nội dung"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>

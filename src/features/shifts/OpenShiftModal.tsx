@@ -96,18 +96,18 @@ export const OpenShiftModal: React.FC<OpenShiftModalProps> = ({
         />
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1.5">Ghi chú mở ca</label>
+          <label className="block text-xs font-medium text-secondary mb-1.5">Ghi chú mở ca</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-field border border-line-strong/80 rounded-lg p-2.5 text-xs text-content placeholder-muted focus:outline-none focus:border-emerald-500"
             rows={2}
           />
         </div>
 
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        {error && <p className="text-xs text-danger font-medium">{error}</p>}
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
           <Button variant="secondary" type="button" onClick={onClose}>
             Hủy Bỏ
           </Button>

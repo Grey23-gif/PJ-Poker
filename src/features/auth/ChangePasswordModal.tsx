@@ -56,9 +56,9 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm" title="Đổi Mật Khẩu">
       {success ? (
         <div className="py-6 text-center space-y-2 animate-fade-in">
-          <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-          <h4 className="text-base font-semibold text-slate-100">Đổi Mật Khẩu Thành Công!</h4>
-          <p className="text-xs text-slate-400">Mật khẩu mới của bạn đã được cập nhật.</p>
+          <CheckCircle2 className="w-12 h-12 text-success mx-auto" />
+          <h4 className="text-base font-semibold text-content">Đổi Mật Khẩu Thành Công!</h4>
+          <p className="text-xs text-muted">Mật khẩu mới của bạn đã được cập nhật.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,7 +82,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-400 hover:text-slate-200"
+                className="text-muted hover:text-content"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -98,7 +98,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen
             leftIcon={<Lock className="w-4 h-4" />}
           />
 
-          {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+          {error && <p className="text-xs text-danger font-medium">{error}</p>}
 
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={onClose} disabled={loading}>

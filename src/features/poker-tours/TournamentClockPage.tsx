@@ -1,17 +1,24 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useTournamentStore } from '../../stores/tournamentStore';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTournamentSessionStore as useTournamentStore } from '../../stores/tournamentSessionStore';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { Modal } from '../../components/ui/Modal';
+import { TournamentOverview } from './TournamentOverview';
+import { TournamentBackground } from '../../components/ui/TournamentBackground';
+import { useBackgroundImage } from '../../hooks/useBackgroundImage';
+import { clockStageName, registrationEndDisplay } from '../../utils/tournamentRegistration';
+import { remainingSeconds, isBuyInClosed } from '../../utils/tournamentRuntime';
+import { useTournamentRuntime } from '../../hooks/useTournamentRuntime';
+import { averageStack, getTournamentStatistics } from '../../utils/tournamentStatistics';
+import { TournamentPrizePanel } from './TournamentPrizePanel';
+import { isSessionFinished } from '../../utils/tournamentFinalization';
 import {
   formatSecondsToMMSS,
-  formatElapsedSeconds,
-  formatChipK,
-  formatNumber,
+  formatChipK as formatChipKOriginal,
+
 } from '../../utils/formatters';
-import { playLevelUpSound, playBreakSound } from '../../utils/audio';
+import { isTournamentSoundEnabled, setTournamentSoundEnabled } from '../../utils/audio';
 import confetti from 'canvas-confetti';
 import {
   Play,
@@ -24,17 +31,32 @@ import {
   Volume2,
   VolumeX,
   Coffee,
-  ArrowLeft,
-  Users,
-  Award,
   Settings,
   Spade,
 } from 'lucide-react';
 
+const formatNumber = (value: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(value);
+const formatChipK = (value: number) => formatChipKOriginal(value);
+
 export const TournamentClockPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { tournaments, activeTourId, setActiveTourId } = useTournamentStore();
+  const selectedId = useMemo(() => {
+    const route = id?.trim().toLowerCase();
+    const explicit = route ? tournaments.find((tour) => [tour.id, tour.code, tour.id.replace(/-/g, ' ')].some((value) => value.toLowerCase() === route || value.toLowerCase() === route.replace(/\s+/g, '-'))) : undefined;
+    return explicit?.id || tournaments.find((tour) => tour.id === activeTourId && !tour.archivedAt && tour.status !== 'CANCELLED')?.id || tournaments.find((tour) => !tour.archivedAt && tour.status !== 'CANCELLED')?.id || '';
+  }, [id, tournaments, activeTourId]);
+  useEffect(() => { if (selectedId && selectedId !== activeTourId) setActiveTourId(selectedId); }, [selectedId, activeTourId, setActiveTourId]);
+  useTournamentRuntime();
+  const tour = tournaments.find((item) => item.id === selectedId);
+  if (tour && searchParams.get('view') !== 'clock') return <TournamentOverview key={selectedId} tour={tour} tournaments={tournaments}
+    onSelect={(nextId) => navigate(`/tours/clock/${nextId}`)} />;
+  return <TournamentDisplay key={selectedId} tourId={selectedId} onBack={() => navigate(`/tours/clock/${selectedId}`)} />;
+};
 
+const TournamentDisplay: React.FC<{ tourId: string; onBack: () => void }> = ({ tourId, onBack }) => {
   const {
     tournaments,
     startTournament,
@@ -43,21 +65,17 @@ export const TournamentClockPage: React.FC = () => {
     nextStage,
     prevStage,
     resetCurrentStage,
-    endTournament,
-    eliminateParticipant,
-    updateChips,
   } = useTournamentStore();
 
   const { currentUser, hasPermission } = useAuthStore();
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(() => typeof document !== 'undefined' && !!document.fullscreenElement);
+  const [soundEnabled, setSoundEnabled] = useState(isTournamentSoundEnabled);
+  useEffect(() => setTournamentSoundEnabled(soundEnabled), [soundEnabled]);
   const [showControls, setShowControls] = useState(true);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
-  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
 
-  // Live wall-clock time in top right ('11:11' style)
+  // Live wall-clock time sau top right ('11:11' style)
   const [wallClockTime, setWallClockTime] = useState(() => {
     const d = new Date();
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -73,65 +91,23 @@ export const TournamentClockPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Robust Tour Finder: Handles "tour 101", "tour-101", "tour_101", codes, or fallbacks!
-  const currentTour = useMemo(() => {
-    if (!tournaments || tournaments.length === 0) return null;
-
-    const rawId = id ? decodeURIComponent(id).trim() : '';
-    if (rawId) {
-      const normalizedWithDash = rawId.replace(/\s+/g, '-');
-      const normalizedWithSpace = rawId.replace(/-/g, ' ');
-
-      const match = tournaments.find(
-        (t) =>
-          t.id.toLowerCase() === rawId.toLowerCase() ||
-          t.id.toLowerCase() === normalizedWithDash.toLowerCase() ||
-          t.id.replace(/-/g, ' ').toLowerCase() === normalizedWithSpace.toLowerCase() ||
-          t.code.toLowerCase() === rawId.toLowerCase() ||
-          t.name.toLowerCase().includes(rawId.toLowerCase())
-      );
-      if (match) return match;
-    }
-
-    // Fallback to active running tour or first tour
-    return tournaments.find((t) => t.status === 'RUNNING') || tournaments[0] || null;
-  }, [tournaments, id]);
-
-  // Pure client countdown timer calculation
-  const [displaySeconds, setDisplaySeconds] = useState(1200);
-  const isAdvancingRef = useRef(false);
-
+  const currentTour = tournaments.find((tour) => tour.id === tourId);
+  const hasFinished = currentTour ? isSessionFinished(currentTour) : false;
+  const backgroundImage = useBackgroundImage(currentTour?.clockBackground);
+  const [renderTime, setRenderTime] = useState(() => Date.now());
   useEffect(() => {
-    if (!currentTour) return;
-
-    const calcRemaining = () => {
-      if (currentTour.status === 'RUNNING' && currentTour.timerStartedAt) {
-        const elapsed = Math.floor((Date.now() - currentTour.timerStartedAt) / 1000);
-        const rem = Math.max(0, currentTour.stageRemainingSeconds - elapsed);
-        setDisplaySeconds(rem);
-
-        // When countdown reaches 0: auto-advance once!
-        if (rem === 0 && !isAdvancingRef.current) {
-          isAdvancingRef.current = true;
-          handleNextStage();
-          setTimeout(() => {
-            isAdvancingRef.current = false;
-          }, 2000);
-        }
-      } else {
-        setDisplaySeconds(currentTour.stageRemainingSeconds);
-      }
-    };
-
-    calcRemaining();
-    const interval = setInterval(calcRemaining, 500);
+    const interval = setInterval(() => setRenderTime(Date.now()), 250);
     return () => clearInterval(interval);
-  }, [
-    currentTour?.id,
-    currentTour?.status,
-    currentTour?.timerStartedAt,
-    currentTour?.stageRemainingSeconds,
-  ]);
+  }, []);
+  const displaySeconds = currentTour ? remainingSeconds(currentTour, renderTime) : 0;
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }, []);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -145,11 +121,13 @@ export const TournamentClockPage: React.FC = () => {
   // Keyboard shortcuts (Space = Play/Pause, F = Fullscreen, M = Mute, Right/Left = Stages)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
       if (e.code === 'Space') {
+        const auth = useAuthStore.getState();
+        if (auth.currentUser?.role !== 'ADMIN' && !auth.hasPermission('TOUR_OPERATE')) return;
         e.preventDefault();
         if (currentTour?.status === 'RUNNING') pauseTournament(currentTour.id);
         else if (currentTour?.status === 'PAUSED') resumeTournament(currentTour.id);
@@ -165,11 +143,11 @@ export const TournamentClockPage: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentTour]);
+  }, [currentTour, pauseTournament, resumeTournament, startTournament, toggleFullscreen]);
 
   // Confetti celebration when tour finishes
   useEffect(() => {
-    if (currentTour?.status === 'COMPLETED') {
+    if (hasFinished) {
       try {
         confetti({
           particleCount: 150,
@@ -177,18 +155,18 @@ export const TournamentClockPage: React.FC = () => {
           origin: { y: 0.5 },
           colors: ['#f59e0b', '#10b981', '#38bdf8', '#ffffff'],
         });
-      } catch (e) {
+      } catch {
         // Safe fallback
       }
     }
-  }, [currentTour?.status]);
+  }, [hasFinished]);
 
   if (!currentTour) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 text-center text-slate-400">
-        <p className="text-base text-slate-200 mb-2">Chưa có thông tin giải đấu nào trong hệ thống.</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 text-center text-muted">
+        <p className="text-base text-content mb-2">Chưa có phiên giải. Chọn mẫu giải và tạo phiên mới.</p>
         <Link to="/tours">
-          <Button variant="emerald">Quay Lại Danh Sách Giải Đấu</Button>
+          <Button variant="emerald">Về danh sách giải đấu</Button>
         </Link>
       </div>
     );
@@ -223,423 +201,174 @@ export const TournamentClockPage: React.FC = () => {
 
   // Calculate total seconds to next break
   let secondsToNextBreak = 0;
-  let levelsRemainingToBreak = 0;
   if (!isBreak && nextBreakStage) {
     secondsToNextBreak = displaySeconds;
     for (let i = currentStageIndex + 1; i < nextBreakIndex; i++) {
       if (stages[i].stageType === 'LEVEL') {
-        levelsRemainingToBreak++;
         secondsToNextBreak += (stages[i].durationMinutes || 15) * 60;
       }
     }
   }
 
-  const canControl = currentUser?.role === 'ADMIN' || hasPermission('TOUR_OPERATE');
+  const canOperate = currentUser?.role === 'ADMIN' || hasPermission('TOUR_OPERATE');
+  const canControl = !hasFinished && canOperate;
 
   // Fullscreen Handler
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
-    }
-  };
+
 
   // Sound Handler on Stage Change
-  const handleNextStage = () => {
-    if (soundEnabled) {
-      if (upcomingStage?.stageType === 'BREAK') playBreakSound();
-      else playLevelUpSound();
-    }
-    nextStage(currentTour.id);
-  };
 
   // Participants & Chips metrics
-  const participants = currentTour.participants || [];
-  const activePlayers = participants.filter((p) => !p.isEliminated);
-  const totalChipsInPlay =
-    participants.reduce((sum, p) => sum + (p.currentChips || 0), 0) || 460000;
-  const averageChips =
-    activePlayers.length > 0
-      ? Math.round(totalChipsInPlay / activePlayers.length)
-      : Math.round(totalChipsInPlay / 26);
-  const currentBB = currentStage.bigBlind || 1600;
-  const averageBB = currentBB > 0 ? Math.round(averageChips / currentBB) : 11;
+  const statistics = getTournamentStatistics(currentTour);
+  const totalChipsInPlay = statistics.totalStack;
+  const averageChips = currentTour.finalResults?.averageStack ?? averageStack(statistics);
+  const showStatistics = isBuyInClosed(currentTour);
+  const currentBB = currentStage.bigBlind || 0;
+  const averageBB = currentBB > 0 ? Math.round(averageChips / currentBB) : 0;
 
-  // Prizes
-  const totalPrize = currentTour.totalPrizePool || 690;
-  const firstPrize = currentTour.firstPlacePrize || 345;
-  const placesPaid = currentTour.placesPaid || 3;
-  const totalRegistered = Math.max(participants.length, currentTour.registeredCount || 40);
+
+
 
   return (
     <div
-      className={`tournament-clock relative min-h-[85vh] flex flex-col justify-between bg-[#0a121c] text-white border border-surface-border rounded-2xl overflow-hidden select-none font-sans ${
-        isFullscreen ? 'clock-fullscreen !fixed inset-0 z-50 !rounded-none border-none min-h-screen w-screen' : ''
+      lang="en"
+      data-background-kind="clock"
+      data-statistics-visibility="visible"
+      className={`tournament-clock ${backgroundImage.url ? 'clock-with-background' : ''} relative isolate flex flex-col bg-canvas text-content border border-surface-border rounded-2xl overflow-hidden select-none font-sans font-bold [&_*]:font-bold ${
+        isFullscreen ? 'clock-fullscreen !fixed inset-0 z-50 !rounded-none border-none w-screen' : ''
       }`}
     >
-      {/* ============================================================== */}
-      {/* 1. TOP HEADER BAR (Logo, Tour Name, Digital Wall Clock)        */}
-      {/* ============================================================== */}
-      <header className="relative z-10 h-14 sm:h-16 px-4 sm:px-8 border-b border-slate-800/80 flex items-center justify-between bg-black/40 backdrop-blur-sm shrink-0">
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-3">
-          <Link
-            to="/tours"
-            className="flex items-center gap-2 group text-slate-300 hover:text-white transition-colors"
-            title="Quay lại danh sách giải đấu"
-          >
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:bg-emerald-500/20">
-              <Spade className="w-4 h-4 text-emerald-300" aria-hidden="true" />
-            </div>
-            <div className="leading-tight">
-              <div className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-semibold">
-                ROYAL POKER
-              </div>
-              <div className="text-xs font-bold text-slate-200">ĐỒNG HỒ GIẢI ĐẤU</div>
-            </div>
-          </Link>
+      <TournamentBackground config={currentTour.clockBackground} url={backgroundImage.url} />
+      {!isFullscreen && <div className="clock-navigation relative z-20 shrink-0 flex flex-wrap items-center gap-3 border-b border-line bg-field/90 px-4 py-2">
+        <h1 className="text-lg font-semibold">Giải đấu</h1>
+        <Button variant="outline" size="sm" onClick={onBack}>Quay lại thông số / chọn giải</Button>
+      </div>}
+      <header className="clock-header relative z-10 border-b border-line/80 bg-field/60 backdrop-blur-sm">
+        <Link to="/tours" className="clock-brand flex items-center gap-2 text-secondary hover:text-content" title="Về danh sách giải đấu">
+          <Spade className="h-8 w-8 text-success" aria-hidden="true" />
+          <span className="text-xs font-semibold tracking-widest">ROYAL POKER</span>
+        </Link>
+        <div className="clock-heading text-center min-w-0">
+          <h2 className="clock-title font-bold uppercase tracking-wide text-warning">{currentTour.name}</h2>
+          <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm sm:text-base font-semibold text-secondary">
+            {currentTour.prizeConfiguration && <span>GTD: {formatNumber((currentTour.finalResults?.prizeConfiguration ?? currentTour.prizeConfiguration).guaranteedPoints)} PTS</span>}
+            <span>Starting Stack: {formatNumber(currentTour.startingChips)}</span>
+          </p>
         </div>
-
-        {/* Center: Tournament Name (matches 'Friday Night Deepstack' in image) */}
-        <div className="text-center truncate px-4 max-w-xs sm:max-w-md md:max-w-xl">
-          <h2 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-wide truncate">
-            {currentTour.name}
-          </h2>
-        </div>
-
-        {/* Right: Digital Clock (matches '11:11' in image) & Fullscreen */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="font-mono text-lg sm:text-2xl font-semibold text-white tracking-wider">
-            {wallClockTime}
-          </div>
-
-          <button
-            onClick={toggleFullscreen}
-            aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Mở toàn màn hình'}
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-            title="Toàn màn hình (F)"
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        <div className="clock-header-tools flex items-center justify-end gap-2">
+          <span className="clock-wall-time font-mono text-base font-semibold tabular-nums">{wallClockTime}</span>
+          <button onClick={toggleFullscreen} aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Mở toàn màn hình'}
+            className="min-h-[var(--control-icon-size)] min-w-[var(--control-icon-size)] flex items-center justify-center rounded-lg bg-field border border-line text-muted hover:text-content" title="Toàn màn hình (F)">
+            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
         </div>
       </header>
 
-      {/* ============================================================== */}
-      {/* 2. MAIN 3-PANEL LAYOUT                                         */}
-      {/* ============================================================== */}
-      <div className="clock-main relative z-10 flex-1 grid grid-cols-12 min-h-0">
-        {/* ------------------------------------------------------------ */}
-        {/* LEFT PANEL: TIME TO BREAK TIME (User Requested Replacement)  */}
-        {/* ------------------------------------------------------------ */}
-        <div className="col-span-12 md:col-span-3 border-b md:border-b-0 md:border-r border-slate-800/80 p-5 sm:p-6 flex flex-col justify-between bg-black/20">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                <Coffee className="w-5 h-5 " />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
-                  KỲ NGHỈ GIẢI LAO
-                </span>
-                <h3 className="text-sm sm:text-base font-semibold text-white">
-                  {isBreak ? 'Đang Nghỉ Giải Lao' : 'Thời Gian Đến Break'}
-                </h3>
-              </div>
+      <div className="clock-main clock-main-with-prizes relative z-10 flex-1">
+        <aside className="clock-statistics bg-field/50" aria-label="Tournament statistics and Break Schedule">
+          <dl className="clock-metrics" data-statistics-values="visible">
+            <div>
+              <dt>Players Remaining</dt>
+              <dd className="text-success">{statistics.playersRemaining} / {statistics.uniquePlayers}<span className="sr-only"> Players Remaining / Unique Players</span></dd>
             </div>
+            <div><dt>Re-entries</dt><dd>{formatNumber(statistics.entries - statistics.uniquePlayers)}</dd></div>
+            <div><dt>Total Entries</dt><dd>{formatNumber(statistics.entries)}</dd></div>
+            <div><dt>Total Stack</dt><dd>{formatChipK(totalChipsInPlay)}</dd></div>
+            <div><dt>Average Stack</dt><dd>{formatChipK(averageChips)} <span className="text-base">({averageBB} BB)</span></dd></div>
+          </dl>
+          <section className="clock-break text-center" aria-label="Break Schedule">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-warning flex items-center justify-center gap-2">
+              <Coffee className="h-4 w-4" aria-hidden="true" /> Break Schedule
+            </h3>
+            <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-muted">{isBreak ? 'Break Remaining' : 'Next Break'}</p>
+            <p className="mt-1 font-mono font-semibold text-warning clock-break-countdown">
+              {isBreak ? formatSecondsToMMSS(displaySeconds) : nextBreakStage ? (
+                secondsToNextBreak >= 3600
+                  ? `${Math.floor(secondsToNextBreak / 3600)}:${formatSecondsToMMSS(secondsToNextBreak % 3600)}`
+                  : formatSecondsToMMSS(secondsToNextBreak)
+              ) : '--:--'}
+            </p>
+            <p className="mt-1 text-xs text-muted">{isBreak ? 'On Break' : nextBreakStage ? clockStageName(nextBreakStage, stages) : 'No more Breaks'}</p>
 
-            {/* Countdown Box */}
-            <div className="p-4 sm:p-5 rounded-xl bg-surface border border-surface-border text-center space-y-1">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">
-                {isBreak ? 'Thời gian nghỉ còn lại' : 'Đếm ngược đến giờ nghỉ'}
-              </span>
+          </section>
+          {showStatistics && currentTour.statisticsNeedsReview && <p className="text-xs text-warning">Số liệu cũ cần đối soát.</p>}
 
-              <div
-                className={`font-mono text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight ${
-                  isBreak
-                    ? 'text-amber-400 animate-pulse'
-                    : secondsToNextBreak <= 300 && secondsToNextBreak > 0
-                    ? 'text-amber-300 animate-pulse'
-                    : 'text-amber-400'
-                }`}
-              >
-                {isBreak
-                  ? formatSecondsToMMSS(displaySeconds)
-                  : nextBreakStage
-                  ? formatSecondsToMMSS(secondsToNextBreak)
-                  : '--:--'}
-              </div>
+        </aside>
 
-              <div className="text-xs font-semibold text-amber-300/90 pt-1">
-                {isBreak ? (
-                  <span>Vui lòng nghỉ ngơi & dùng đồ uống cafe</span>
-                ) : nextBreakStage ? (
-                  <span>Khoảng {Math.max(1, Math.ceil(secondsToNextBreak / 60))} phút nữa</span>
-                ) : (
-                  <span className="text-slate-500">Đã qua các đợt nghỉ</span>
-                )}
-              </div>
-            </div>
+        <div className="clock-center text-center">
+          <div className="clock-level-row flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <h3 className={`clock-level font-semibold tracking-wide ${isBreak ? 'text-warning' : 'text-content'}`}>{clockStageName(currentStage, stages)}</h3>
+          </div>
+          <p data-registration-end className="mt-3 text-sm sm:text-base text-secondary">{registrationEndDisplay(currentTour)}</p>
 
-            {/* Break Information Details */}
-            <div className="space-y-2 text-xs">
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Đợt nghỉ tiếp theo:</span>
-                  <span className="font-bold text-slate-200">
-                    {nextBreakStage ? nextBreakStage.name : isBreak ? 'Đang diễn ra' : 'Không còn'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Thời lượng nghỉ:</span>
-                  <span className="font-bold text-amber-400 font-mono">
-                    {nextBreakStage
-                      ? `${nextBreakStage.durationMinutes} phút`
-                      : isBreak
-                      ? `${currentStage.durationMinutes} phút`
-                      : '--'}
-                  </span>
-                </div>
-
-                {!isBreak && nextBreakStage && (
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-800">
-                    <span className="text-slate-400">Số Level trước Break:</span>
-                    <span className="font-bold text-emerald-400">
-                      Còn {levelsRemainingToBreak + 1} Level nữa
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="clock-blinds">
+            {!isBreak ? <>
+              <span className="sr-only">Blinds</span>
+              <p className="clock-blinds-values font-mono font-semibold tracking-tight">
+                {formatNumber(currentStage.smallBlind ?? 0)} / {formatNumber(currentStage.bigBlind ?? 0)}
+              </p>
+              <p className="clock-ante clock-blinds-values font-mono font-semibold tracking-tight text-warning">Ante {formatNumber(currentStage.ante ?? 0)}</p>
+            </> : <p className="text-lg text-warning">On Break</p>}
           </div>
 
-          {/* Quick Button to View/Manage Chips */}
-          <div className="pt-4 border-t border-slate-800/80">
-            <button
-              onClick={() => setIsPlayerModalOpen(true)}
-              className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-between transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-400" />
-                Danh Sách Chip Hội Viên
-              </span>
-              <span className="text-[11px] font-bold text-emerald-400 font-mono">
-                {activePlayers.length} người
-              </span>
-            </button>
+          <div className={`clock-display font-mono font-semibold ${isBreak ? 'text-warning' : displaySeconds <= 60 && displaySeconds > 0 ? 'text-danger animate-pulse' : 'text-content'}`}>
+            {formatSecondsToMMSS(displaySeconds)}
           </div>
+
+          {upcomingStage && <div className="clock-next-level rounded-full border border-line-strong bg-field/80">
+            <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted">{upcomingStage.stageType === 'BREAK' ? 'Next Break' : 'Next Level'}</span>
+            <p className="font-mono font-semibold text-warning">
+              {upcomingStage.stageType === 'BREAK'
+                ? `${clockStageName(upcomingStage, stages)} · ${upcomingStage.durationMinutes} min`
+                : `${formatNumber(upcomingStage.smallBlind ?? 0)} / ${formatNumber(upcomingStage.bigBlind ?? 0)} · Ante ${formatNumber(upcomingStage.ante ?? 0)}`}
+            </p>
+          </div>}
         </div>
 
-        {/* ------------------------------------------------------------ */}
-        {/* CENTER PANEL: THE TOURNAMENT CLOCK (Match Image)             */}
-        {/* ------------------------------------------------------------ */}
-        <div className="clock-center col-span-12 md:col-span-6 flex flex-col justify-between p-4 sm:p-6 lg:p-8 text-center">
-          {/* Main Clock & Blinds Area */}
-          <div className="my-auto space-y-2 sm:space-y-4">
-            {/* Stage / Level Headline (e.g. 'Level 5' in image) */}
-            <div className="text-lg sm:text-2xl md:text-3xl font-semibold text-white tracking-wide">
-              {isBreak ? (
-                <span className="text-amber-400 font-semibold">{currentStage.name}</span>
-              ) : (
-                <span>{currentStage.name}</span>
-              )}
-            </div>
-
-            {/* Massive Digital Timer Display (e.g. '14:52' in image) */}
-            <div className="relative py-1">
-              <div
-                className={`clock-display font-mono font-semibold ${
-                  isBreak
-                    ? 'text-amber-400'
-                    : currentTour.status === 'PAUSED'
-                    ? 'text-slate-400 opacity-60'
-                    : displaySeconds <= 60 && displaySeconds > 0
-                    ? 'text-rose-500 animate-pulse'
-                    : 'text-white'
-                }`}
-              >
-                {formatSecondsToMMSS(displaySeconds)}
-              </div>
-
-              {currentTour.status === 'PAUSED' && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-semibold text-lg sm:text-xl uppercase tracking-widest shadow-2xl">
-                    ĐANG TẠM DỪNG
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Blinds Title & Values (e.g. 'Blinds \n 800 | 1,6K (1,6K)') */}
-            {!isBreak ? (
-              <div className="space-y-1">
-                <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest block">
-                  Mức cược
-                </span>
-                <div className="text-2xl sm:text-4xl md:text-5xl font-semibold text-white font-mono tracking-tight">
-                  {formatChipK(currentStage.smallBlind || 0)} | {formatChipK(currentStage.bigBlind || 0)}{' '}
-                  <span className="text-slate-300">
-                    ({formatChipK(currentStage.ante || currentStage.bigBlind || 0)})
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl max-w-md mx-auto text-amber-300 text-xs">
-                GIỜ NGHỈ GIẢI LAO - CÁC TAY BÀI NGHỈ NGƠI VÀ BÀN GIAO CHIP TẠI BÀN
-              </div>
-            )}
-
-            {/* Next Level & Next Break (matches 'Next Level \n 1,5K | 3K (3K) \n Next Break in 30 min') */}
-            <div className="space-y-1 pt-1">
-              {upcomingStage && (
-                <div className="text-xs sm:text-sm text-slate-400">
-                  <span className="text-slate-400 block font-medium">Vòng tiếp theo</span>
-                  <strong className="text-sm sm:text-base font-bold text-slate-200 font-mono">
-                    {formatChipK(upcomingStage.smallBlind || 0)} | {formatChipK(upcomingStage.bigBlind || 0)}{' '}
-                    ({formatChipK(upcomingStage.ante || upcomingStage.bigBlind || 0)})
-                  </strong>
-                </div>
-              )}
-
-              {nextBreakStage && !isBreak && (
-                <div className="text-[11px] sm:text-xs text-amber-400/90 font-medium pt-1">
-                  Nghỉ sau {Math.max(1, Math.ceil(secondsToNextBreak / 60))} phút
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Center 3 Stat Boxes (Chip khởi đầu | Chip trung bình | Tổng chip) */}
-          <div className="w-full mt-4 pt-3 border-t border-slate-800 grid grid-cols-3 divide-x divide-slate-800 text-center">
-            {/* Box 1: Chip khởi đầu */}
-            <div className="px-2">
-              <span className="text-[10px] sm:text-xs font-semibold text-slate-400 block uppercase tracking-wider">
-                Chip khởi đầu
-              </span>
-              <div className="text-base sm:text-xl lg:text-2xl font-semibold text-sky-400 font-mono mt-0.5">
-                {formatChipK(currentTour.startingChips || 10000)}
-              </div>
-            </div>
-
-            {/* Box 2: Chip trung bình (e.g. '17,7K(11 BB)') */}
-            <div className="px-2">
-              <span className="text-[10px] sm:text-xs font-semibold text-slate-400 block uppercase tracking-wider">
-                Chip trung bình
-              </span>
-              <div className="text-base sm:text-xl lg:text-2xl font-semibold text-sky-400 font-mono mt-0.5">
-                {formatChipK(averageChips)}
-                <span className="text-xs font-bold text-sky-300 ml-1">
-                  ({averageBB} BB)
-                </span>
-              </div>
-            </div>
-
-            {/* Box 3: Tổng chip (e.g. '460K') */}
-            <div className="px-2">
-              <span className="text-[10px] sm:text-xs font-semibold text-slate-400 block uppercase tracking-wider">
-                Tổng chip
-              </span>
-              <div className="text-base sm:text-xl lg:text-2xl font-semibold text-sky-400 font-mono mt-0.5">
-                {formatChipK(totalChipsInPlay)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ------------------------------------------------------------ */}
-        {/* RIGHT PANEL: PRIZES & STATUS (Match Image)                   */}
-        {/* ------------------------------------------------------------ */}
-        <div className="col-span-12 md:col-span-3 border-t md:border-t-0 md:border-l border-slate-800/80 p-5 sm:p-6 flex flex-col justify-between bg-black/20 text-center">
-          <div className="space-y-4 sm:space-y-5">
-            {/* Tổng giải thưởng (matches '690 đ' in image) */}
-            <div className="space-y-0.5">
-              <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Tổng giải thưởng
-              </span>
-              <div className="text-2xl sm:text-4xl lg:text-5xl font-semibold text-yellow-400 font-mono tracking-tight">
-                {formatNumber(totalPrize)} đ
-              </div>
-            </div>
-
-            {/* Hạng nhất (matches '345 đ' in image) */}
-            <div className="space-y-0.5">
-              <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Hạng nhất
-              </span>
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-yellow-400 font-mono tracking-tight">
-                {formatNumber(firstPrize)} đ
-              </div>
-            </div>
-
-            {/* Giải tiếp theo (matches '0 đ' in image) */}
-            <div className="space-y-0.5">
-              <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Giải tiếp theo
-              </span>
-              <div className="text-xl sm:text-2xl lg:text-3xl font-semibold text-yellow-400/90 font-mono tracking-tight">
-                0 đ
-              </div>
-            </div>
-
-            {/* Số hạng nhận thưởng (matches '3' in image) */}
-            <div className="space-y-0.5">
-              <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Số hạng nhận thưởng
-              </span>
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-emerald-400 font-mono">
-                {placesPaid}
-              </div>
-            </div>
-
-            {/* Người chơi còn lại (matches '26 / 40' in image) */}
-            <div className="space-y-0.5 pt-2 border-t border-slate-800">
-              <span className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider">
-                Người chơi còn lại
-              </span>
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-emerald-400 font-mono tracking-tight">
-                {activePlayers.length} / {totalRegistered}
-              </div>
-            </div>
-          </div>
-
-          {/* Elapsed tournament time footer */}
-          <div className="pt-4 border-t border-slate-800/80 text-[11px] text-slate-500 font-mono">
-            Đã diễn ra: {formatElapsedSeconds(currentTour.totalElapsedSeconds || 0)}
-          </div>
-        </div>
+        {showStatistics && <aside className="clock-prizes bg-field/50" aria-label="Tournament prizes">
+          <TournamentPrizePanel entries={statistics.entries} configuration={currentTour.prizeConfiguration} finalResults={currentTour.finalResults} visible={true} />
+        </aside>}
       </div>
+
+      {currentTour.status === 'PAUSED' && !hasFinished && (
+        <div data-clock-paused className="pointer-events-none absolute inset-0 z-[15] flex items-center justify-center bg-black/75 p-6">
+          <div role="status" className="rounded-2xl border border-white/30 bg-black/80 px-10 py-6 text-center shadow-2xl sm:px-16 sm:py-10">
+            <p className="text-4xl font-bold uppercase tracking-widest text-white sm:text-6xl lg:text-7xl">PAUSE</p>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* 3. BOTTOM OPERATOR CONTROL BAR                                 */}
       {/* ============================================================== */}
-      <div className="relative z-20 bg-slate-950/95 border-t border-slate-800/90 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+      <div className="clock-operator-bar relative z-20 bg-field/95 border-t border-line/90 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3 text-xs text-muted">
           <button
             aria-expanded={showControls}
             onClick={() => setShowControls(!showControls)}
-            className="flex items-center gap-1.5 font-semibold text-slate-300 hover:text-white"
+            className="flex items-center gap-1.5 font-semibold text-secondary hover:text-content"
           >
-            <Settings className="w-3.5 h-3.5 text-amber-400" />
-            <span>Phím điều khiển {showControls ? '▲' : '▼'}</span>
+            <Settings className="w-3.5 h-3.5 text-warning" />
+            <span>Điều khiển {showControls ? '▲' : '▼'}</span>
           </button>
-          <span className="hidden lg:inline text-slate-500">
+          <span className="clock-shortcuts text-muted">
             [Phím tắt: Space = Chạy/Dừng, F = Toàn màn hình, M = Âm thanh]
           </span>
         </div>
 
-        {showControls && canControl && (
+        {showControls && canOperate && (
           <div className="flex flex-wrap items-center gap-2">
+            {hasFinished && <span className="text-xs text-muted">Phiên giải đã kết thúc · Thao tác đã khóa</span>}
             {/* Prev Stage */}
             <Button
               variant="outline"
               size="sm"
               leftIcon={<SkipBack className="w-3.5 h-3.5" />}
-              disabled={currentStageIndex === 0}
+              disabled={!canControl || currentStageIndex === 0}
               onClick={() => prevStage(currentTour.id)}
-              title="Lùi về Level trước"
+              title="Level trước"
             >
-              Lùi Level
+              Level trước
             </Button>
 
             {/* Play / Pause / Resume */}
@@ -651,7 +380,7 @@ export const TournamentClockPage: React.FC = () => {
                 onClick={() => pauseTournament(currentTour.id)}
                 className="font-bold min-w-[120px] shadow-glow-gold"
               >
-                Tạm Dừng
+                Tạm dừng
               </Button>
             ) : currentTour.status === 'PAUSED' ? (
               <Button
@@ -661,7 +390,7 @@ export const TournamentClockPage: React.FC = () => {
                 onClick={() => resumeTournament(currentTour.id)}
                 className="font-bold min-w-[120px] shadow-glow-green"
               >
-                Tiếp Tục
+                Tiếp tục
               </Button>
             ) : currentTour.status === 'CREATED' ? (
               <Button
@@ -671,19 +400,20 @@ export const TournamentClockPage: React.FC = () => {
                 onClick={() => startTournament(currentTour.id)}
                 className="font-bold min-w-[130px] shadow-glow-green"
               >
-                Bắt Đầu Tour
+                Bắt đầu giải
               </Button>
-            ) : null}
+            ) : hasFinished ? <Button variant="secondary" size="md" disabled leftIcon={<Play className="w-4 h-4" />}>Đã kết thúc</Button> : null}
 
             {/* Next Stage */}
             <Button
               variant="outline"
               size="sm"
               rightIcon={<SkipForward className="w-3.5 h-3.5" />}
-              onClick={handleNextStage}
-              title="Chuyển sang Level hoặc Break tiếp theo"
+              onClick={() => nextStage(currentTour.id)}
+              disabled={!canControl || currentStageIndex >= stages.length - 1}
+              title="Chuyển đến Level hoặc Break tiếp theo"
             >
-              Sang Level
+              Tiếp theo
             </Button>
 
             {/* Reset Stage Timer */}
@@ -692,163 +422,53 @@ export const TournamentClockPage: React.FC = () => {
               size="sm"
               leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
               onClick={() => setIsResetConfirmOpen(true)}
-              title="Đặt lại đếm ngược Level này"
+              disabled={!canControl}
+              title="Đặt lại thời gian Level hiện tại"
             >
-              Reset
+              Đặt lại
             </Button>
 
             {/* Sound Toggle */}
             <button
               aria-pressed={soundEnabled}
-              aria-label={soundEnabled ? 'Tắt chuông báo' : 'Bật chuông báo'}
+              aria-label={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-2 rounded-lg border transition-colors ${
+              className={`min-h-[var(--control-icon-size)] min-w-[var(--control-icon-size)] flex items-center justify-center p-2 rounded-lg border transition-colors ${
                 soundEnabled
-                  ? 'bg-slate-900 border-slate-700 text-emerald-400'
-                  : 'bg-slate-900 border-slate-700 text-slate-500'
+                  ? 'bg-field border-line-strong text-success'
+                  : 'bg-field border-line-strong text-muted'
               }`}
-              title={soundEnabled ? 'Đang bật chuông báo' : 'Đang tắt chuông'}
+              title={soundEnabled ? 'Đang bật âm thanh' : 'Đang tắt âm thanh'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
-            {/* End Tour & Award Points */}
-            {currentTour.status !== 'COMPLETED' && (
-              <Button
-                variant="danger"
-                size="sm"
-                leftIcon={<Award className="w-3.5 h-3.5" />}
-                onClick={() => setIsEndConfirmOpen(true)}
-              >
-                Kết Thúc Tour
-              </Button>
-            )}
           </div>
         )}
 
-        {/* Small blue LED power light on bottom right matching monitor in image */}
+        {/* Small blue LED power light on bottom right matching monitor sau image */}
         <div className="flex items-center gap-2">
           <div
             className="w-2.5 h-2.5 rounded-full bg-emerald-400"
-            title="Đồng hồ đang hiển thị"
+            title="Màn hình giải đấu đang hoạt động"
           />
         </div>
       </div>
 
-      {/* ============================================================== */}
-      {/* 4. CHIP & PLAYERS MODAL                                        */}
-      {/* ============================================================== */}
-      <Modal
-        isOpen={isPlayerModalOpen}
-        onClose={() => setIsPlayerModalOpen(false)}
-        maxWidth="lg"
-        title="Quản Lý Danh Sách Hội Viên & Chip Tại Bàn"
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2 text-xs bg-slate-900 p-3 rounded-xl border border-slate-800 text-center">
-            <div>
-              <span className="text-slate-400">Còn lại:</span>
-              <div className="font-bold text-emerald-400">
-                {activePlayers.length} / {participants.length}
-              </div>
-            </div>
-            <div>
-              <span className="text-slate-400">Chip TB (Average):</span>
-              <div className="font-bold text-sky-400 font-mono">
-                {formatChipK(averageChips)} ({averageBB} BB)
-              </div>
-            </div>
-            <div>
-              <span className="text-slate-400">Tổng Chip:</span>
-              <div className="font-bold text-slate-100 font-mono">
-                {formatChipK(totalChipsInPlay)}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-h-80 overflow-y-auto border border-slate-800 rounded-xl">
-            <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-slate-900 text-slate-400 font-semibold border-b border-slate-800">
-                <tr>
-                  <th className="py-2.5 px-3">Hội viên</th>
-                  <th className="py-2.5 px-3">Số Chip</th>
-                  <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                  {canControl && <th className="py-2.5 px-3 text-center">Thao tác</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {participants.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-800/40">
-                    <td className="py-2.5 px-3 font-semibold text-slate-200">{p.playerName}</td>
-                    <td className="py-2.5 px-3 font-mono">
-                      {p.isEliminated ? (
-                        <span className="text-slate-500">0</span>
-                      ) : (
-                        <input
-                          type="number"
-                          aria-label={`Số chip của ${p.playerName}`}
-                          value={p.currentChips}
-                          disabled={!canControl}
-                          onChange={(e) => updateChips(currentTour.id, p.id, Number(e.target.value))}
-                          className="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-emerald-400 font-bold focus:outline-none"
-                        />
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      {p.isEliminated ? (
-                        <span className="text-rose-400 font-bold">Hạng #{p.eliminatedRank}</span>
-                      ) : (
-                        <span className="text-emerald-400 font-semibold">Đang đấu</span>
-                      )}
-                    </td>
-                    {canControl && (
-                      <td className="py-2.5 px-3 text-center">
-                        {!p.isEliminated && (
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => eliminateParticipant(currentTour.id, p.id)}
-                          >
-                            Loại
-                          </Button>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex justify-end pt-2 border-t border-slate-800">
-            <Button variant="secondary" onClick={() => setIsPlayerModalOpen(false)}>
-              Đóng
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
       {/* Reset Confirmation Dialog */}
       <ConfirmDialog
+        locale="vi"
+        cancelText="Hủy"
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={() => resetCurrentStage(currentTour.id)}
-        title="Xác Nhận Đặt Lại Đồng Hồ"
-        message={`Bạn có chắc muốn đặt lại thời gian của ${currentStage.name} về ${currentStage.durationMinutes} phút?`}
-        confirmText="Đặt Lại Timer"
+        title="Đặt lại thời gian?"
+        message={`Đặt lại ${clockStageName(currentStage, stages)} về ${currentStage.durationMinutes} phút?`}
+        confirmText="Đặt lại thời gian"
         variant="warning"
       />
 
-      {/* End Tournament Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={isEndConfirmOpen}
-        onClose={() => setIsEndConfirmOpen(false)}
-        onConfirm={() => endTournament(currentTour.id)}
-        title="Xác Nhận Kết Thúc Giải Đấu"
-        message="Kết thúc giải đấu sẽ khóa đồng hồ, tính toán xếp hạng chung cuộc và tự động tạo đề xuất thưởng điểm tích lũy cho Quán Quân, Á Quân và Top dẫn đầu."
-        confirmText="Kết Thúc & Trao Điểm"
-        variant="danger"
-      />
+
     </div>
   );
 };

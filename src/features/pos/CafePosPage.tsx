@@ -134,26 +134,26 @@ export const CafePosPage: React.FC = () => {
   const canManageProducts = currentUser?.role === 'ADMIN' || hasPermission('POS_PRODUCT_MANAGE');
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="pos-page flex flex-col gap-5">
       {/* Top Banner with Active Shift Notice */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-[var(--component-gap)]">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <div className="p-2 rounded-lg bg-emerald-500/10 text-success">
             <Coffee className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+            <h1 className="page-title text-2xl font-semibold text-content flex items-center gap-2">
               Quầy bán hàng
               
             </h1>
-            <div className="text-xs text-slate-400 flex items-center gap-3 mt-0.5">
+            <div className="text-xs text-muted flex items-center gap-3 mt-0.5">
               {activeShift ? (
-                <span className="flex items-center gap-1 text-emerald-400">
+                <span className="flex items-center gap-1 text-success">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   {activeShift.shiftName} (Thu ngân: {activeShift.cashierName})
                 </span>
               ) : (
-                <span className="text-amber-400 flex items-center gap-1">
+                <span className="text-warning flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5" /> Chưa mở ca làm việc chính thức
                 </span>
               )}
@@ -204,10 +204,10 @@ export const CafePosPage: React.FC = () => {
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 aria-pressed={isSelected}
-                className={`pos-category flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap text-left ${
+                className={`pos-category flex items-center justify-between gap-3 px-3 py-[var(--control-padding-y)] rounded-lg text-xs font-medium transition-colors whitespace-nowrap text-left ${
                   isSelected
                     ? 'font-semibold'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    : 'text-secondary hover:bg-raised/80 hover:text-content'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ export const CafePosPage: React.FC = () => {
                 </div>
                 <span
                   className={`hidden md:inline-block text-[11px] px-1.5 py-0.5 rounded-full ${
-                    isSelected ? 'bg-emerald-700/60 text-white' : 'bg-slate-800 text-slate-400'
+                    isSelected ? 'bg-success/10 text-success' : 'bg-raised text-muted'
                   }`}
                 >
                   {count}
@@ -227,7 +227,7 @@ export const CafePosPage: React.FC = () => {
         </div>
 
         {/* Search and product catalog */}
-        <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col gap-[var(--component-gap)] min-w-0">
           {/* Search bar */}
           <div className="relative shrink-0">
             <Input
@@ -242,7 +242,7 @@ export const CafePosPage: React.FC = () => {
           {/* Product cards grid */}
           <div className="pos-products">
             {filteredProducts.length === 0 ? (
-              <div role="status" className="col-span-full py-16 text-center text-slate-500 text-xs">
+              <div role="status" className="col-span-full py-16 text-center text-muted text-xs">
                 Không tìm thấy món nào trong danh mục này.
               </div>
             ) : (
@@ -266,15 +266,16 @@ export const CafePosPage: React.FC = () => {
                     {canManageProducts && (
                       <button
                         onClick={(e) => handleEditProduct(product, e)}
-                        className="product-edit absolute top-2 left-2 z-10 min-w-9 min-h-9 flex items-center justify-center p-1.5 rounded-lg bg-black/60 text-slate-300 hover:text-white hover:bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="product-edit absolute top-2 left-2 z-10 min-w-9 min-h-9 flex items-center justify-center p-1.5 rounded-lg bg-black/60 text-white hover:text-white hover:bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Chỉnh sửa sản phẩm"
+                        aria-label={`Chỉnh sửa ${product.name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     )}
 
                     {/* Product Image */}
-                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-2.5 bg-slate-950">
+                    <div className="relative aspect-[3/2] rounded-xl overflow-hidden mb-2.5 bg-field">
                       <img
                         src={product.image || 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300'}
                         alt={product.name}
@@ -282,21 +283,21 @@ export const CafePosPage: React.FC = () => {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-                      <span className="absolute bottom-1.5 left-2 font-mono text-[10px] text-slate-300 font-bold bg-slate-900/80 px-1.5 py-0.5 rounded">
+                      <span className="absolute bottom-1.5 left-2 font-mono text-[10px] text-secondary font-bold bg-field/80 px-1.5 py-0.5 rounded">
                         {product.code}
                       </span>
                     </div>
 
                     {/* Product Name & Price */}
                     <div>
-                      <h4 className="font-semibold text-slate-100 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-emerald-300 transition-colors">
+                      <h4 className="font-semibold text-content text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-success transition-colors">
                         {product.name}
                       </h4>
-                      <div className="mt-2 flex items-baseline justify-between">
-                        <span className="text-emerald-400 font-bold text-xs sm:text-sm">
+                      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-1">
+                        <span className="text-success font-bold text-xs sm:text-sm">
                           {formatVND(product.price)}
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-muted">
                           Kho: {product.stock || 50}
                         </span>
                       </div>
@@ -310,21 +311,21 @@ export const CafePosPage: React.FC = () => {
 
         </div>
         {/* Sticky order summary and checkout */}
-        <div className="pos-cart flex flex-col gap-4">
+        <div className="pos-cart flex flex-col gap-[var(--component-gap)]">
           {/* Cart Header & Customer Inputs */}
-          <div className="space-y-3 pb-3 border-b border-slate-800 shrink-0">
+          <div className="space-y-3 pb-3 border-b border-line shrink-0">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-emerald-400" />
+              <h3 className="font-bold text-content text-sm flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-success" />
                 Đơn Hàng Hiện Tại
                 {cart.length > 0 && (
-                  <span className="text-xs text-emerald-400">({cart.reduce((s, i) => s + i.quantity, 0)} món)</span>
+                  <span className="text-xs text-success">({cart.reduce((s, i) => s + i.quantity, 0)} món)</span>
                 )}
               </h3>
               {cart.length > 0 && (
                 <button
                   onClick={clearCart}
-                  className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                  className="text-xs text-danger hover:text-danger flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Xóa tất cả
                 </button>
@@ -334,12 +335,12 @@ export const CafePosPage: React.FC = () => {
             {/* Table & Customer Inputs */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <label htmlFor="pos-table" className="block text-xs text-slate-400 mb-1">Vị trí bàn</label>
+                <label htmlFor="pos-table" className="block text-xs text-muted mb-1">Vị trí bàn</label>
                 <select
                   id="pos-table"
                   value={tableNumber}
                   onChange={(e) => setCustomerInfo(customerName, e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-field border border-line-strong rounded-lg p-1.5 text-content text-xs focus:outline-none focus:border-emerald-500"
                 >
                   <option value="Bàn 1">Bàn Cafe 1</option>
                   <option value="Bàn 2">Bàn Cafe 2</option>
@@ -353,14 +354,14 @@ export const CafePosPage: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="pos-customer" className="block text-xs text-slate-400 mb-1">Tên khách / SĐT</label>
+                <label htmlFor="pos-customer" className="block text-xs text-muted mb-1">Tên khách / SĐT</label>
                 <input
                   type="text"
                   id="pos-customer"
                   placeholder="Khách vãng lai..."
                   value={customerName}
                   onChange={(e) => setCustomerInfo(e.target.value, tableNumber)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-field border border-line-strong rounded-lg p-1.5 text-content text-xs focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
@@ -369,44 +370,44 @@ export const CafePosPage: React.FC = () => {
           {/* Cart Items List */}
           <div className="max-h-[360px] overflow-y-auto py-2 space-y-3 min-h-[140px]">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 space-y-2">
-                <Coffee className="w-10 h-10 text-slate-700" />
+              <div className="h-full flex flex-col items-center justify-center text-center p-[var(--card-padding)] text-muted space-y-2">
+                <Coffee className="w-10 h-10 text-muted" />
                 <p className="text-xs">Chưa có món nào được chọn</p>
-                <p className="text-[11px] text-slate-600">Nhấn vào các món bên menu để thêm vào đơn hàng</p>
+                <p className="text-[11px] text-muted">Nhấn vào các món bên menu để thêm vào đơn hàng</p>
               </div>
             ) : (
               cart.map((item) => (
                 <div
                   key={item.product.id}
-                  className="bg-slate-900/90 border border-slate-800 rounded-xl p-2.5 text-xs space-y-1.5"
+                  className="bg-field/90 border border-line rounded-xl p-2.5 text-xs space-y-1.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <div className="font-semibold text-slate-200">{item.product.name}</div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="font-semibold text-content">{item.product.name}</div>
+                      <div className="text-[11px] text-muted">
                         {formatVND(item.product.price)} x {item.quantity} ={' '}
-                        <strong className="text-emerald-400 font-bold">
+                        <strong className="text-success font-bold">
                           {formatVND(item.product.price * item.quantity)}
                         </strong>
                       </div>
                     </div>
 
                     {/* Quantity controls */}
-                    <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-0.5 border border-slate-700 shrink-0">
+                    <div className="flex items-center gap-1 bg-raised rounded-lg p-0.5 border border-line-strong shrink-0">
                       <button
                         aria-label={`Giảm số lượng ${item.product.name}`}
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="p-1 text-slate-300 hover:text-white hover:bg-slate-700 rounded"
+                        className="p-1 text-secondary hover:text-content hover:bg-raised rounded"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-6 text-center font-bold text-slate-100 text-xs">
+                      <span className="w-6 text-center font-bold text-content text-xs">
                         {item.quantity}
                       </span>
                       <button
                         aria-label={`Tăng số lượng ${item.product.name}`}
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="p-1 text-slate-300 hover:text-white hover:bg-slate-700 rounded"
+                        className="p-1 text-secondary hover:text-content hover:bg-raised rounded"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -414,12 +415,12 @@ export const CafePosPage: React.FC = () => {
                   </div>
 
                   {/* Item note input toggle */}
-                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
+                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-line/60">
                     <button
                       onClick={() =>
                         setShowItemNotesId(showItemNotesId === item.product.id ? null : item.product.id)
                       }
-                      className="text-slate-400 hover:text-emerald-400 flex items-center gap-1"
+                      className="text-muted hover:text-success flex items-center gap-1"
                     >
                       <FileText className="w-3 h-3" />
                       {item.notes ? item.notes : '+ Ghi chú món'}
@@ -427,7 +428,7 @@ export const CafePosPage: React.FC = () => {
                     <button
                       aria-label={`Xóa ${item.product.name} khỏi đơn`}
                       onClick={() => removeFromCart(item.product.id)}
-                      className="text-slate-500 hover:text-rose-400"
+                      className="text-muted hover:text-danger"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -440,7 +441,7 @@ export const CafePosPage: React.FC = () => {
                       placeholder="Ít đá, không đường, ít ngọt..."
                       value={item.notes || ''}
                       onChange={(e) => updateItemNotes(item.product.id, e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-field border border-line-strong rounded px-2 py-1 text-[11px] text-content focus:outline-none focus:border-emerald-500"
                       autoFocus
                     />
                   )}
@@ -450,11 +451,11 @@ export const CafePosPage: React.FC = () => {
           </div>
 
           {/* Cart Financial Summary & Checkout Options */}
-          <div className="pt-3 border-t border-slate-800 space-y-3 shrink-0">
+          <div className="pt-3 border-t border-line space-y-3 shrink-0">
             {/* Discount selector */}
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
-                <Percent className="w-3.5 h-3.5 text-amber-400" /> Giảm giá hội viên (%):
+              <span className="text-muted flex items-center gap-1">
+                <Percent className="w-3.5 h-3.5 text-warning" /> Giảm giá hội viên (%):
               </span>
               <div className="flex items-center gap-1">
                 {[0, 5, 10, 15].map((pct) => (
@@ -465,7 +466,7 @@ export const CafePosPage: React.FC = () => {
                     className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
                       discountPercent === pct
                         ? 'bg-amber-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                        : 'bg-raised text-muted hover:text-content'
                     }`}
                   >
                     {pct}%
@@ -475,20 +476,20 @@ export const CafePosPage: React.FC = () => {
             </div>
 
             {/* Calculations Breakdown */}
-            <div className="space-y-1 text-xs text-slate-300">
+            <div className="space-y-1 text-xs text-secondary">
               <div className="flex justify-between">
-                <span className="text-slate-400">Tạm tính hàng:</span>
+                <span className="text-muted">Tạm tính hàng:</span>
                 <span>{formatVND(subtotal)}</span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-400">
+                <div className="flex justify-between text-success">
                   <span>Giảm trừ:</span>
                   <span>-{formatVND(discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-baseline pt-1 border-t border-slate-800">
-                <span className="text-sm font-bold text-white">Tổng Phải Thu:</span>
-                <span className="text-2xl font-semibold text-emerald-300">{formatVND(totalAmount)}</span>
+              <div className="flex justify-between items-baseline pt-1 border-t border-line">
+                <span className="text-sm font-bold text-content">Tổng Phải Thu:</span>
+                <span className="text-2xl font-semibold text-success">{formatVND(totalAmount)}</span>
               </div>
             </div>
 
@@ -501,7 +502,7 @@ export const CafePosPage: React.FC = () => {
                 className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 font-semibold transition-all ${
                   paymentMethod === 'CASH'
                     ? 'bg-emerald-700 text-white shadow-md'
-                    : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                    : 'bg-raised/80 text-muted hover:text-content'
                 }`}
               >
                 <Banknote className="w-4 h-4" />
@@ -515,7 +516,7 @@ export const CafePosPage: React.FC = () => {
                 className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 font-semibold transition-all ${
                   paymentMethod === 'BANK_TRANSFER'
                     ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                    : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                    : 'bg-raised/80 text-muted hover:text-content'
                 }`}
               >
                 <QrCode className="w-4 h-4" />
@@ -525,8 +526,8 @@ export const CafePosPage: React.FC = () => {
 
             {/* Quick Cash Buttons if CASH */}
             {paymentMethod === 'CASH' && cart.length > 0 && (
-              <div className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 text-xs">
-                <div className="flex justify-between items-center text-[11px] text-slate-400">
+              <div className="space-y-1.5 bg-field/60 p-2.5 rounded-xl border border-line text-xs">
+                <div className="flex justify-between items-center text-[11px] text-muted">
                   <span>Khách đưa:</span>
                   <div className="flex gap-1">
                     {[totalAmount, 100000, 200000, 500000].map((amt, idx) => {
@@ -536,7 +537,7 @@ export const CafePosPage: React.FC = () => {
                           key={idx}
                           type="button"
                           onClick={() => setAmountReceived(amt)}
-                          className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 hover:bg-slate-700"
+                          className="px-1.5 py-0.5 rounded bg-raised text-[10px] text-secondary hover:bg-raised"
                         >
                           {amt === totalAmount ? 'Vừa đủ' : `${amt / 1000}k`}
                         </button>
@@ -545,9 +546,9 @@ export const CafePosPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-1 border-t border-slate-800/60">
-                  <span className="text-slate-400">Tiền thối lại:</span>
-                  <span className="font-bold text-emerald-400">{formatVND(changeAmount)}</span>
+                <div className="flex justify-between items-center pt-1 border-t border-line/60">
+                  <span className="text-muted">Tiền thối lại:</span>
+                  <span className="font-bold text-success">{formatVND(changeAmount)}</span>
                 </div>
               </div>
             )}

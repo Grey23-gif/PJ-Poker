@@ -25,18 +25,18 @@ export const Button: React.FC<ButtonProps> = ({
   const variants = {
     primary: 'bg-poker-green hover:bg-poker-green-light text-[#06291e] border border-transparent',
     emerald: 'bg-poker-green hover:bg-poker-green-light text-[#06291e] border border-transparent',
-    gold: 'bg-[#d8b56c]/10 hover:bg-[#d8b56c]/20 text-[#e6c785] border border-[#d8b56c]/40',
-    secondary: 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 focus:ring-slate-500',
+    gold: 'bg-[#d8b56c]/10 hover:bg-[#d8b56c]/20 text-gold border border-[#d8b56c]/40',
+    secondary: 'bg-raised hover:bg-raised text-content border border-line-strong focus:ring-slate-500',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-950/40 focus:ring-rose-500 border border-rose-500/30',
-    outline: 'border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white hover:bg-slate-800/60 focus:ring-slate-500',
-    ghost: 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 focus:ring-slate-600',
+    outline: 'border border-line-strong hover:border-line-strong text-secondary hover:text-content hover:bg-raised/60 focus:ring-slate-500',
+    ghost: 'text-muted hover:text-content hover:bg-raised/50 focus:ring-slate-600',
   };
 
   const sizes = {
-    sm: 'min-h-11 text-xs px-3 py-2 gap-1.5',
-    md: 'min-h-11 text-sm px-4 py-2.5 gap-2',
-    lg: 'min-h-12 text-base px-5 py-3 gap-2.5',
-    icon: 'min-h-11 min-w-11 p-2.5',
+    sm: 'min-h-[var(--button-sm-height)] text-xs leading-5 px-3 py-1.5 gap-1.5',
+    md: 'min-h-[var(--button-height)] text-sm leading-5 px-3.5 py-2 gap-2',
+    lg: 'min-h-[var(--button-lg-height)] text-sm leading-5 px-4 py-2.5 gap-2',
+    icon: 'min-h-[var(--control-icon-size)] min-w-[var(--control-icon-size)] p-2',
   };
 
   return (

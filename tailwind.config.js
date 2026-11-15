@@ -8,13 +8,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0b111b',
+        background: 'rgb(var(--canvas) / <alpha-value>)',
+        canvas: 'rgb(var(--canvas) / <alpha-value>)',
+        navigation: 'rgb(var(--navigation) / <alpha-value>)',
+        field: 'rgb(var(--field) / <alpha-value>)',
+        raised: 'rgb(var(--raised) / <alpha-value>)',
+        content: 'rgb(var(--content) / <alpha-value>)',
+        secondary: 'rgb(var(--secondary) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        line: { DEFAULT: 'rgb(var(--line) / <alpha-value>)', strong: 'rgb(var(--line-strong) / <alpha-value>)' },
+        success: 'rgb(var(--success) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
+        info: 'rgb(var(--info) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
+        gold: 'var(--color-gold)',
         surface: {
-          DEFAULT: '#121c29',
-          light: '#192635',
-          card: '#121c29',
-          hover: '#192635',
-          border: '#2b3c4e'
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          light: 'rgb(var(--raised) / <alpha-value>)',
+          card: 'rgb(var(--card) / <alpha-value>)',
+          hover: 'rgb(var(--raised) / <alpha-value>)',
+          border: 'rgb(var(--line) / <alpha-value>)'
         },
         poker: {
           green: {

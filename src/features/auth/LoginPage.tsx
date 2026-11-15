@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Eye, EyeOff, Lock, User, Sparkles, CheckCircle2, Spade } from 'lucide-react';
 import { UserRole } from '../../types/auth';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 export const LoginPage: React.FC = () => {
   const { login, switchDemoRole } = useAuthStore();
@@ -52,28 +53,29 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      <div className="w-full max-w-md space-y-6 relative z-10">
+    <div className="login-page min-h-screen bg-canvas flex flex-col justify-center items-center px-4 py-8 relative">
+      <div className="absolute top-4 right-4"><ThemeToggle /></div>
+      <div className="w-full max-w-md space-y-[var(--section-gap)] relative z-10">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-surface border border-emerald-500/40 shadow-2xl shadow-emerald-950/60 mb-2">
-            <Spade className="w-8 h-8 text-emerald-300" aria-hidden="true" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-surface border border-emerald-500/40 mb-1">
+            <Spade className="w-6 h-6 text-success" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+          <h1 className="page-title text-2xl sm:text-3xl font-semibold tracking-tight text-content">
             ROYAL POKER CLUB
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-muted">
             Hệ Thống Quản Lý Cafe & Giải Đấu Poker Chuyên Nghiệp
           </p>
         </div>
 
         {/* 1-Click Demo Accounts Selector */}
-        <div className="bg-surface border border-slate-800 rounded-2xl p-4 shadow-xl space-y-2.5">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-            <span className="flex items-center gap-1.5 text-amber-400">
+        <div className="bg-surface border border-line rounded-2xl p-4 shadow-xl space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-secondary">
+            <span className="flex items-center gap-1.5 text-warning">
               <Sparkles className="w-3.5 h-3.5" /> Tài khoản dùng thử:
             </span>
-            <span className="text-xs text-slate-500 font-normal">Đăng nhập nhanh</span>
+            <span className="text-xs text-muted font-normal">Đăng nhập nhanh</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -82,8 +84,8 @@ export const LoginPage: React.FC = () => {
               onClick={() => handleQuickDemo('ADMIN')}
               className="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition-all  group"
             >
-              <div className="text-xs font-bold text-amber-300">Quản trị</div>
-              <div className="text-xs text-slate-400 mt-0.5 truncate">Toàn quyền hệ thống</div>
+              <div className="text-xs font-bold text-warning">Quản trị</div>
+              <div className="text-xs text-muted mt-0.5 truncate">Toàn quyền hệ thống</div>
             </button>
 
             <button
@@ -91,8 +93,8 @@ export const LoginPage: React.FC = () => {
               onClick={() => handleQuickDemo('CASHIER')}
               className="p-2.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-left transition-all  group"
             >
-              <div className="text-xs font-bold text-sky-300">Thu ngân</div>
-              <div className="text-xs text-slate-400 mt-0.5 truncate">POS & Quản lý Ca</div>
+              <div className="text-xs font-bold text-info">Thu ngân</div>
+              <div className="text-xs text-muted mt-0.5 truncate">POS & Quản lý Ca</div>
             </button>
 
             <button
@@ -100,14 +102,14 @@ export const LoginPage: React.FC = () => {
               onClick={() => handleQuickDemo('PLAYER')}
               className="p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition-all  group"
             >
-              <div className="text-xs font-bold text-emerald-300">Hội viên</div>
-              <div className="text-xs text-slate-400 mt-0.5 truncate">Điểm & Bảng hạng</div>
+              <div className="text-xs font-bold text-success">Hội viên</div>
+              <div className="text-xs text-muted mt-0.5 truncate">Điểm & Bảng hạng</div>
             </button>
           </div>
         </div>
 
         {/* Standard Login Form */}
-        <div className="bg-surface backdrop-blur-md border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5">
+        <div className="bg-surface border border-line rounded-2xl p-[var(--card-padding)] space-y-4">
           <form onSubmit={handleLogin} className="space-y-4">
             <Input
               label="Tên đăng nhập"
@@ -132,7 +134,7 @@ export const LoginPage: React.FC = () => {
                   aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   aria-pressed={showPassword}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-200"
+                  className="text-muted hover:text-content"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -140,7 +142,7 @@ export const LoginPage: React.FC = () => {
             />
 
             {error && (
-              <p role="alert" className="text-xs text-rose-400 font-medium bg-rose-500/10 p-2.5 rounded-lg border border-rose-500/20">
+              <p role="alert" className="text-xs text-danger font-medium bg-rose-500/10 p-2.5 rounded-lg border border-rose-500/20">
                 {error}
               </p>
             )}
@@ -156,9 +158,9 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="pt-2 border-t border-slate-800 text-center">
-            <p className="text-xs text-slate-500 flex items-center justify-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="pt-2 border-t border-line text-center">
+            <p className="text-xs text-muted flex items-center justify-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-success" />
               Bảo mật hệ thống CLB Poker nội bộ & Giải trí
             </p>
           </div>

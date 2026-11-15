@@ -1,0 +1,186 @@
+// Isolated store and SSR tests. Never touches browser storage or real accounts.
+import assert from 'node:assert/strict';
+import { createServer } from 'vite';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
+
+const storage = new Map();
+globalThis.localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: (key) => storage.delete(key) };
+for (const key of ['point_requests', 'point_transactions', 'leaderboard']) storage.set(`poker_cafe_${key}`, '[]');
+const options = { server: { middlewareMode: true, hmr: false, ws: false }, appType: 'custom', logLevel: 'silent',
+  plugins: [{ name: 'ssr-dialog-test-double', enforce: 'pre', load(id) {
+    if (id.replaceAll('\\', '/').endsWith('/src/components/ui/Modal.tsx')) return `import React from 'react'; export function Modal({isOpen,children,footer,title}) { return isOpen ? React.createElement('section',{'aria-label':title},children,footer) : null; }`;
+  } }] };
+const servers = [];
+const open = async () => { const instance = await createServer(options); servers.push(instance); return instance; };
+try {
+  const server = await open();
+  const { useAuthStore: auth } = await server.ssrLoadModule('/src/stores/authStore.ts');
+  const { useTournamentTemplateStore: templates } = await server.ssrLoadModule('/src/stores/tournamentTemplateStore.ts');
+  const { useTournamentSessionStore: sessions } = await server.ssrLoadModule('/src/stores/tournamentSessionStore.ts');
+  const { usePointsStore: points, POINTS_LEDGER_KEY, requestsForMember } = await server.ssrLoadModule('/src/stores/pointsStore.ts');
+  (await server.ssrLoadModule('/src/utils/audio.ts')).setTournamentSoundEnabled(false);
+  const { searchPlayers, nextPlayerOption } = await server.ssrLoadModule('/src/utils/playerSearch.ts');
+  const admin = auth.getState().users.find((user) => user.role === 'ADMIN');
+  const cashier = auth.getState().users.find((user) => user.role === 'CASHIER');
+  const basePlayer = auth.getState().users.find((user) => user.role === 'PLAYER');
+  const players = ['Nguyễn Văn An', 'Đặng Thị Ánh', 'Trần Minh Khang', 'Lê Hoàng Nam', 'Phạm Thị Mai'].map((fullName, index) => ({ ...basePlayer, id: `member-test-${index}`, username: `member-${index}`, fullName, phone: `090123456${index}`, status: 'ACTIVE', playerStats: { ...basePlayer.playerStats, currentPoints: 0, toursWon: 0 } }));
+  const users = [...auth.getState().users.filter((user) => user.role !== 'PLAYER'), ...players];
+  auth.setState({ users, currentUser: admin });
+  storage.set('poker_cafe_users', JSON.stringify(users)); storage.set('poker_cafe_auth_user', JSON.stringify(admin));
+  const state = () => sessions.getState(); const ledger = () => points.getState();
+  const tour = (id) => state().tournaments.find((item) => item.id === id);
+  const ok = (result) => assert.equal(result.success, true, result.message);
+  const makeAssignments = (count) => players.slice(0, count).map((player, index) => ({ rank: index + 1, memberId: player.id }));
+  const configuration = { guaranteedPoints: 65, entriesThreshold: 30, additionalPointsPerEntry: 2, positions: [60, 30, 10].map((percentage) => ({ percentage })) };
+  const template = templates.getState().createTemplate({ ...templates.getState().templates[0], name: 'Batch Tour', maxPlayers: 100, prizeConfiguration: configuration });
+  const a = state().createSession(template.id);
+  assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3) }), /FINISHED/);
+  const finish = (id) => {
+    ok(state().correctStatistics(id, { entries: 50, uniquePlayers: 5, playersRemaining: 2, totalStack: 0 }, '', tour(id).statisticsHistory.at(-1)?.id));
+    ok(state().endTournament(id));
+  };
+  finish(a.id);
+  templates.getState().updateTemplate(template.id, { prizeConfiguration: { ...configuration, positions: [50, 25, 15, 5, 5].map((percentage) => ({ percentage })) } });
+  const b = state().createSession(template.id); finish(b.id);
+  assert.equal(tour(a.id).archivedAt, undefined); assert.equal(tour(b.id).archivedAt, undefined);
+  const frozenA = structuredClone(tour(a.id).finalResults), frozenB = structuredClone(tour(b.id).finalResults);
+  templates.getState().updateTemplate(template.id, { prizeConfiguration: { ...configuration, guaranteedPoints: 999 } });
+  const templateBeforeApproval = JSON.stringify(templates.getState().templates);
+  const { TopTourAssignmentRows } = await server.ssrLoadModule('/src/features/player-points/TopTourAssignmentRows.tsx');
+  for (const [session, count] of [[a, 3], [b, 5]]) {
+    const markup = renderToStaticMarkup(React.createElement(TopTourAssignmentRows, { sessionId: session.id, payouts: tour(session.id).finalResults.payouts, players, requests: [], assignments: {}, attempted: false, onChange() {} }));
+    assert.equal((markup.match(/data-top-rank=/g) || []).length, count);
+    assert.equal((markup.match(/role="combobox"/g) || []).length, count);
+    assert.ok(markup.includes(count === 3 ? '63,00 PTS' : '52,50 PTS'));
+  }
+  assert.equal(searchPlayers(players, 'nguyen van an')[0].id, players[0].id);
+  assert.equal(searchPlayers(players, 'DANG THI ANH')[0].id, players[1].id);
+  assert.equal(searchPlayers(players, '0901234562')[0].id, players[2].id);
+  assert.equal(searchPlayers(players, 'minh')[0].id, players[2].id);
+  assert.equal(searchPlayers(players, '4563')[0].id, players[3].id);
+  assert.equal(searchPlayers(players, 'minh')[0].id, players[2].id);
+  assert.equal(searchPlayers(players, '4563')[0].id, players[3].id);
+  assert.equal(searchPlayers(players, 'TEST-3')[0].id, players[3].id);
+  assert.equal(searchPlayers(players, 'không tồn tại').length, 0);
+  assert.equal(nextPlayerOption([false, true, false], -1, 1), 0);
+  assert.equal(nextPlayerOption([false, true, false], 0, 1), 2);
+  assert.equal(nextPlayerOption([false, true, false], -1, -1), 2);
+  assert.equal(nextPlayerOption([false, true, false], 2, 1), 0);
+  assert.equal(nextPlayerOption([true, true], 0, 1), -1);
+  console.log('PASS: frozen 3/5 TOP rows, combobox semantics, Vietnamese/name/phone/ID search and keyboard option navigation');
+
+  const invalidAssignments = [makeAssignments(2), [...makeAssignments(3), { rank: 4, memberId: players[3].id }],
+    [{ rank: 1, memberId: players[0].id }, { rank: 1, memberId: players[1].id }, { rank: 3, memberId: players[2].id }],
+    makeAssignments(3).map((item) => ({ ...item, memberId: players[0].id })),
+    makeAssignments(3).map((item, index) => index === 0 ? { ...item, memberId: 'Nguyễn Văn An' } : item)];
+  for (const assignments of invalidAssignments) assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments }));
+  assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3), expectedFinalizedAt: 'stale' }));
+  auth.setState({ currentUser: players[0] }); assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3) }));
+  auth.setState({ currentUser: cashier });
+  const beforeSubmission = players.map((player) => ledger().getPlayerPoints(player.id));
+  const request = ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3), expectedFinalizedAt: frozenA.finalizedAt });
+  assert.equal(request.status, 'PENDING'); assert.equal(request.amount, 105); assert.equal(request.topAssignments.length, 3);
+  assert.deepEqual(request.topAssignments.map((item) => item.points), [63, 31.5, 10.5]);
+  assert.equal(request.requestedBy.id, cashier.id); assert.equal(request.templateId, template.id);
+  assert.equal(tour(a.id).rewardStatus, 'TOP_REWARD_PENDING'); assert.equal(tour(a.id).archivedAt, undefined);
+  assert.deepEqual(players.map((player) => ledger().getPlayerPoints(player.id)), beforeSubmission);
+  assert.equal(ledger().transactions.length, 0);
+  assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3) }));
+  assert.throws(() => ledger().createTopTourRequest({ sessionId: a.id, rank: 1, memberId: players[4].id }));
+  assert.equal(ledger().approveRequest(request.id).success, false); assert.equal(ledger().rejectRequest(request.id, undefined, undefined, 'cashier').success, false);
+  const memberView = requestsForMember(ledger().requests, players[1].id);
+  assert.equal(memberView[0].amount, 31.5); assert.equal(memberView[0].topAssignments.length, 1);
+  assert.equal(memberView[0].topAssignments[0].memberId, players[1].id);
+  console.log('PASS: complete distinct stable IDs, free-text rejection, RBAC, one pending batch and balance/archive neutrality');
+
+  auth.setState({ currentUser: admin });
+  const beforeFailure = JSON.stringify({ requests: ledger().requests, transactions: ledger().transactions, leaderboard: ledger().leaderboard, sessions: state().sessions, users: auth.getState().users });
+  const write = localStorage.setItem;
+  localStorage.setItem = () => { throw Error('quota'); };
+  assert.equal(ledger().approveRequest(request.id).success, false);
+  assert.equal(JSON.stringify({ requests: ledger().requests, transactions: ledger().transactions, leaderboard: ledger().leaderboard, sessions: state().sessions, users: auth.getState().users }), beforeFailure);
+  localStorage.setItem = write;
+  const originalLedger = storage.get(POINTS_LEDGER_KEY);
+  const tampered = JSON.parse(originalLedger);
+  tampered.requests.find((item) => item.id === request.id).topAssignments[0].points = 63.001;
+  storage.set(POINTS_LEDGER_KEY, JSON.stringify(tampered));
+  assert.equal(ledger().approveRequest(request.id).success, false, 'Approval rejects reward amounts that diverge from the frozen Session');
+  assert.equal(ledger().transactions.length, 0); assert.equal(tour(a.id).archivedAt, undefined);
+  const overflow = JSON.parse(originalLedger);
+  overflow.leaderboard.push({ playerId: players[2].id, currentPoints: Number.MAX_SAFE_INTEGER / 100 });
+  storage.set(POINTS_LEDGER_KEY, JSON.stringify(overflow));
+  assert.equal(ledger().approveRequest(request.id).success, false, 'Failure on a later Player cannot publish earlier credits');
+  assert.equal(ledger().transactions.length, 0); assert.equal(tour(a.id).archivedAt, undefined);
+  storage.set(POINTS_LEDGER_KEY, originalLedger);
+  let writes = 0;
+  localStorage.setItem = (key, value) => { assert.equal(key, POINTS_LEDGER_KEY); writes++; write(key, value); };
+  ok(ledger().approveRequest(request.id)); localStorage.setItem = write;
+  assert.equal(writes, 1, 'One canonical write publishes every balance, transaction, approval and archive marker');
+  assert.equal(ledger().transactions.filter((transaction) => transaction.requestId === request.id).length, 3);
+  assert.deepEqual(players.slice(0, 3).map((player) => ledger().getPlayerPoints(player.id)), [63, 31.5, 10.5]);
+  assert.equal(tour(a.id).status, 'FINISHED'); assert.equal(tour(a.id).rewardStatus, 'ARCHIVED'); assert.ok(tour(a.id).archivedAt);
+  assert.deepEqual(tour(a.id).finalResults, frozenA); assert.equal(JSON.stringify(templates.getState().templates), templateBeforeApproval);
+  assert.equal(ledger().approveRequest(request.id).success, false); assert.equal(ledger().transactions.length, 3);
+  assert.throws(() => ledger().createTopTourBatch({ sessionId: a.id, assignments: makeAssignments(3) }));
+  assert.equal(state().resetTournamentSession(a.id).success, false);
+  assert.equal(state().correctStatistics(a.id, { entries: 0, uniquePlayers: 0, playersRemaining: 0, totalStack: 0 }, '').success, false);
+  assert.throws(() => state().updateTournament(a.id, { name: 'mutate archive' }));
+  const locked = JSON.stringify(tour(a.id));
+  for (const action of ['startTournament', 'resumeTournament', 'pauseTournament', 'nextStage', 'prevStage', 'resetCurrentStage']) state()[action](a.id);
+  assert.equal(JSON.stringify(tour(a.id)), locked);
+  console.log('PASS: failed storage and later-player overflow leave all credits unchanged; one-write approval credits every TOP exactly once and archives only the Session');
+
+  auth.setState({ currentUser: cashier });
+  const rejected = ledger().createTopTourBatch({ sessionId: b.id, assignments: makeAssignments(5) });
+  auth.setState({ currentUser: admin });
+  const beforeReject = players.map((player) => ledger().getPlayerPoints(player.id));
+  assert.equal(ledger().rejectRequest(rejected.id, undefined, undefined, '').success, false);
+  ok(ledger().rejectRequest(rejected.id, undefined, undefined, 'Đổi phân bổ Player'));
+  assert.equal(tour(b.id).archivedAt, undefined); assert.equal(tour(b.id).rewardStatus, 'FINISHED');
+  assert.deepEqual(players.map((player) => ledger().getPlayerPoints(player.id)), beforeReject);
+  const replacement = ledger().createTopTourBatch({ sessionId: b.id, assignments: makeAssignments(5).reverse() });
+  const handlers = [];
+  globalThis.window = { addEventListener: (name, handler) => { if (name === 'storage') handlers.push(handler); }, removeEventListener() {} };
+  const otherTab = await open();
+  const otherSessions = (await otherTab.ssrLoadModule('/src/stores/tournamentSessionStore.ts')).useTournamentSessionStore;
+  const otherPoints = (await otherTab.ssrLoadModule('/src/stores/pointsStore.ts')).usePointsStore;
+  delete globalThis.window;
+  assert.equal(otherSessions.getState().tournaments.find((item) => item.id === b.id).rewardStatus, 'TOP_REWARD_PENDING');
+  ok(ledger().approveRequest(replacement.id));
+  for (const handler of handlers) handler({ key: POINTS_LEDGER_KEY });
+  assert.ok(otherSessions.getState().tournaments.find((item) => item.id === b.id).archivedAt);
+  assert.equal(otherPoints.getState().transactions.length, 8);
+  assert.equal(ledger().requests.find((item) => item.id === rejected.id).status, 'REJECTED');
+  assert.equal(ledger().transactions.filter((transaction) => transaction.requestId === replacement.id).length, 5);
+  assert.deepEqual(tour(b.id).finalResults, frozenB);
+  const fresh = await open();
+  const restoredSessions = (await fresh.ssrLoadModule('/src/stores/tournamentSessionStore.ts')).useTournamentSessionStore;
+  const restoredPoints = (await fresh.ssrLoadModule('/src/stores/pointsStore.ts')).usePointsStore;
+  assert.ok(restoredSessions.getState().tournaments.find((item) => item.id === a.id).archivedAt);
+  assert.ok(restoredSessions.getState().tournaments.find((item) => item.id === b.id).archivedAt);
+  assert.equal(restoredPoints.getState().approveRequest(request.id).success, false);
+  assert.equal(restoredPoints.getState().transactions.length, 8);
+  assert.equal(restoredSessions.getState().activeTourId, null);
+  console.log('PASS: rejection retains a selectable FINISHED Session, resubmission preserves history, 5-TOP approval and fresh-store archive/replay protection');
+
+  const { AppRoutes } = await fresh.ssrLoadModule('/src/routes/AppRoutes.tsx');
+  const render = (path) => renderToStaticMarkup(React.createElement(MemoryRouter, { initialEntries: [path] }, React.createElement(AppRoutes)));
+  const management = render('/tours');
+  const currentSection = management.slice(management.indexOf('Các phiên giải hiện tại'), management.indexOf('id="tournament-history"'));
+  assert.ok(!currentSection.includes(a.id) && !currentSection.includes(b.id));
+  for (const value of [a.id, b.id, 'Lịch sử giải đấu', 'Nguyễn Văn An', players[0].phone, 'Người duyệt', 'Lưu trữ lúc']) assert.ok(management.includes(value), value);
+  const overview = render(`/tours/clock/${a.id}`); assert.ok(overview.includes('Đã lưu trữ · FINISHED'));
+  const { TopTourRequestModal } = await fresh.ssrLoadModule('/src/features/player-points/TopTourRequestModal.tsx');
+  const dialog = renderToStaticMarkup(React.createElement(TopTourRequestModal, { onClose() {} }));
+  assert.ok(dialog.includes('Không có phiên giải đấu đã kết thúc nào đang chờ phân bổ thưởng.'));
+  assert.ok(!dialog.includes(a.id) && !dialog.includes(b.id));
+  const next = state().createSession(template.id); assert.equal(next.statistics.entries, 0); assert.equal(next.archivedAt, undefined);
+  assert.equal(templates.getState().templates.find((item) => item.id === template.id).name, template.name);
+  console.log('PASS: archived sessions disappear from current/new-reward lists, remain in read-only searchable history and leave templates reusable');
+} finally {
+  for (const server of servers) await server.close();
+  delete globalThis.localStorage;
+  delete globalThis.window;
+}

@@ -48,7 +48,7 @@ export const PointAdjustmentModal: React.FC<PointAdjustmentModalProps> = ({ isOp
 
     const finalAmount = isDeduction ? -numAmount : numAmount;
 
-    createRequest({
+    try { createRequest({
       playerId: targetPlayer.id,
       playerName: targetPlayer.fullName,
       playerPhone: targetPlayer.phone,
@@ -60,7 +60,7 @@ export const PointAdjustmentModal: React.FC<PointAdjustmentModalProps> = ({ isOp
         name: currentUser?.fullName || 'Thu Ngân',
         role: currentUser?.role || 'CASHIER',
       },
-    });
+    }); } catch (failure) { setError(failure instanceof Error ? failure.message : 'Không gửi được yêu cầu.'); return; }
 
     onClose();
   };
@@ -87,21 +87,20 @@ export const PointAdjustmentModal: React.FC<PointAdjustmentModalProps> = ({ isOp
             onChange={(e) => setPointType(e.target.value as PointType)}
           >
             <option value="MANUAL_BONUS">Thưởng phong trào / Hội đồng</option>
-            <option value="TOUR_REWARD">Thưởng thành tích Tour</option>
             <option value="EVENT">Điểm sự kiện CLB</option>
             <option value="PENALTY">Trừ điểm vi phạm nội quy</option>
           </Select>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label className="block text-xs font-medium text-secondary mb-1.5">
               Hình thức cộng/trừ
             </label>
-            <div className="grid grid-cols-2 gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-700">
+            <div className="grid grid-cols-2 gap-1.5 bg-field p-1 rounded-lg border border-line-strong">
               <button
                 type="button"
                 onClick={() => setIsDeduction(false)}
                 className={`py-1 rounded text-xs font-semibold ${
-                  !isDeduction ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:text-white'
+                  !isDeduction ? 'bg-emerald-700 text-white' : 'text-muted hover:text-content'
                 }`}
               >
                 + Cộng Điểm
@@ -110,7 +109,7 @@ export const PointAdjustmentModal: React.FC<PointAdjustmentModalProps> = ({ isOp
                 type="button"
                 onClick={() => setIsDeduction(true)}
                 className={`py-1 rounded text-xs font-semibold ${
-                  isDeduction ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-white'
+                  isDeduction ? 'bg-rose-600 text-white' : 'text-muted hover:text-content'
                 }`}
               >
                 - Trừ Điểm
@@ -128,25 +127,25 @@ export const PointAdjustmentModal: React.FC<PointAdjustmentModalProps> = ({ isOp
         />
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label className="block text-xs font-medium text-secondary mb-1.5">
             Lý do & Căn cứ điều chỉnh *
           </label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-field border border-line-strong/80 rounded-lg p-2.5 text-xs text-content placeholder-muted focus:outline-none focus:border-emerald-500"
             rows={3}
             placeholder="Ví dụ: Thưởng đóng góp tích cực hỗ trợ giải đấu, hoặc Thưởng Quán Quân bảng phụ..."
           />
         </div>
 
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-warning">
           <strong>Lưu ý:</strong> Yêu cầu điều chỉnh điểm sau khi gửi sẽ ở trạng thái <strong>CHỜ DUYỆT (PENDING)</strong> và chỉ có hiệu lực cộng/trừ số dư sau khi Quản trị viên (Admin) phê duyệt.
         </div>
 
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        {error && <p className="text-xs text-danger font-medium">{error}</p>}
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
           <Button variant="secondary" type="button" onClick={onClose}>
             Hủy Bỏ
           </Button>

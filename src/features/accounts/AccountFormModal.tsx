@@ -107,7 +107,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
       title={userToEdit ? 'Chỉnh Sửa Thông Tin Tài Khoản' : 'Tạo Mới Tài Khoản Hệ Thống'}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
           <Input
             label="Họ và tên *"
             value={fullName}
@@ -123,7 +123,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
           <Input
             label="Số điện thoại"
             value={phone}
@@ -139,7 +139,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
           <Select
             label="Vai trò (Role) *"
             value={role}
@@ -170,9 +170,9 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
           />
         )}
 
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        {error && <p className="text-xs text-danger font-medium">{error}</p>}
 
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
           <Button variant="secondary" type="button" onClick={onClose}>
             Hủy Bỏ
           </Button>

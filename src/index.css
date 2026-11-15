@@ -1,22 +1,85 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
     color-scheme: dark;
-    --color-background: #0b111b;
-    --color-card: #121c29;
-    --color-raised: #192635;
-    --color-border: #2b3c4e;
-    --color-foreground: #edf3f8;
-    --color-muted: #a5b4c5;
+    --chart-green: #10b981;
+    --chart-gold: #f59e0b;
+    --canvas: 11 17 27;
+    --navigation: 12 20 31;
+    --card: 18 28 41;
+    --field: 15 23 42;
+    --raised: 25 38 53;
+    --line: 43 60 78;
+    --line-strong: 71 85 105;
+    --content: 237 243 248;
+    --secondary: 203 213 225;
+    --muted: 165 180 197;
+    --success: 110 231 183;
+    --warning: 251 191 36;
+    --danger: 251 113 133;
+    --info: 56 189 248;
+    --accent: 192 132 252;
     --color-primary: #34d399;
     --color-on-primary: #06291e;
     --color-gold: #d8b56c;
     --color-destructive: #fb7185;
     --radius-control: 10px;
     --radius-card: 16px;
+    --sidebar-width: 256px;
+    --app-header-height: 64px;
+    --page-padding: 16px;
+    --section-gap: 24px;
+    --component-gap: 16px;
+    --card-padding: 20px;
+    --page-title-size: 1.5rem;
+    --card-title-size: 1rem;
+    --button-sm-height: 44px;
+    --button-height: 44px;
+    --button-lg-height: 48px;
+    --input-height: 44px;
+    --control-padding-y: 10px;
+    --control-icon-size: 44px;
+    --nav-item-height: 44px;
+    --nav-padding-y: 10px;
+    --form-label-size: .875rem;
+    --form-label-gap: 8px;
+    --table-cell-padding-y: 12px;
+    --table-row-height: 48px;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --chart-green: #047857;
+    --chart-gold: #b45309;
+    --canvas: 244 247 250;
+    --navigation: 255 255 255;
+    --card: 255 255 255;
+    --field: 248 250 252;
+    --raised: 232 239 245;
+    --line: 209 219 229;
+    --line-strong: 148 163 184;
+    --content: 15 23 42;
+    --secondary: 51 65 85;
+    --muted: 71 85 105;
+    --success: 4 120 87;
+    --warning: 146 64 14;
+    --danger: 190 18 60;
+    --info: 3 105 161;
+    --accent: 126 34 206;
+    --color-primary: #047857;
+    --color-on-primary: #ffffff;
+    --color-gold: #85601a;
+    --color-destructive: #be123c;
+  }
+  :root {
+    --color-background: rgb(var(--canvas));
+    --color-card: rgb(var(--card));
+    --color-raised: rgb(var(--raised));
+    --color-border: rgb(var(--line));
+    --color-foreground: rgb(var(--content));
+    --color-muted: rgb(var(--muted));
   }
   body {
     margin: 0;
@@ -33,28 +96,59 @@
   button:not(:disabled), [role='button'] { cursor: pointer; }
   :focus-visible { outline: 2px solid var(--color-primary) !important; outline-offset: 4px; }
   button:disabled { cursor: not-allowed; }
-  input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea { min-height: 44px; }
+  input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea { min-height: var(--input-height); }
   input[type='checkbox'], input[type='radio'], input[type='range'] { accent-color: var(--color-primary); }
-  ::selection { background: #34d39940; color: #fff; }
+  ::selection { background: #34d39940; color: var(--color-foreground); }
   ::-webkit-scrollbar { width: 7px; height: 7px; }
   ::-webkit-scrollbar-track { background: var(--color-background); }
   ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 8px; }
-  html { scroll-padding-top: 100px; }
+  html { scroll-padding-top: calc(var(--app-header-height) + 24px); }
+}
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  :root {
+    --sidebar-width: 232px;
+    --app-header-height: 60px;
+    --page-padding: 20px;
+    --section-gap: 20px;
+    --component-gap: 12px;
+    --card-padding: 16px;
+    --page-title-size: clamp(1.375rem, 1.8vw, 1.625rem);
+    --button-sm-height: 36px;
+    --button-height: 38px;
+    --button-lg-height: 42px;
+    --input-height: 38px;
+    --control-padding-y: 7px;
+    --control-icon-size: 36px;
+    --nav-item-height: 38px;
+    --nav-padding-y: 7px;
+    --form-label-size: .8125rem;
+    --form-label-gap: 6px;
+    --table-cell-padding-y: 6px;
+    --table-row-height: 40px;
+  }
 }
 @layer components {
   .app-shell { background: var(--color-background); }
   .app-content { max-width: 1600px; }
+  .pos-page { container: workspace / inline-size; }
+  .app-content > *, .app-content .grid > * { min-width: 0; }
+  .app-content select { min-width: 0; max-width: 100%; }
   .app-content > div > div:first-child h1 { font-weight: 600; letter-spacing: -.035em; line-height: 1.3; }
   .app-content h1 + p { margin-top: 8px; }
-  .app-content table { font-size: 13px; }
-  .app-content th { font-size: 12px; font-weight: 500; white-space: nowrap; }
-  .app-content td { padding-top: 16px; padding-bottom: 16px; }
-  .app-content thead { background: #0e1722; }
-  .app-content tbody tr { transition: background-color 150ms; }
-  .app-content tbody tr:hover { background-color: #19263580; }
-  .app-content .overflow-x-auto { overscroll-behavior-x: contain; }
+  :is(.app-content, .modal-content) table { font-size: 13px; }
+  :is(.app-content, .modal-content) th { font-size: 12px; font-weight: 500; white-space: nowrap; }
+  :is(.app-content, .modal-content) td { padding-top: var(--table-cell-padding-y); padding-bottom: var(--table-cell-padding-y); }
+  .app-content thead { background: rgb(var(--field)); }
+  :is(.app-content, .modal-content) tbody tr { height: var(--table-row-height); transition: background-color 150ms; }
+  .app-content tbody tr:hover { background-color: rgb(var(--raised) / .5); }
+  .app-content .overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
   .app-content .overflow-x-auto table { min-width: 560px; }
   .surface-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-card); }
+  .app-content .page-title, .login-page .page-title { font-size: var(--page-title-size); line-height: 1.25; }
+  .ui-card-header, .ui-card-content, .ui-card-footer { padding: var(--card-padding); }
+  .tour-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+  .tour-card-grid > article { min-width: 0; }
+  .modal-content > form > .flex.justify-end { flex-wrap: wrap; }
   .page-eyebrow { color: var(--color-gold); font-size: 11px; letter-spacing: .16em; font-weight: 600; text-transform: uppercase; }
   .skip-link { position: fixed; left: 16px; top: -80px; z-index: 100; padding: 12px 20px; background: var(--color-primary); color: var(--color-on-primary); border-radius: 8px; }
   .skip-link:focus { top: 12px; }
@@ -67,22 +161,124 @@
   .pos-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 24px; align-items: start; }
   .pos-catalog { min-width: 0; }
   .pos-categories { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; }
-  .pos-category { min-height: 44px; flex-shrink: 0; border: 1px solid var(--color-border); }
-  .pos-category[aria-pressed='true'] { background: #103b30; color: #6ee7b7; border-color: #34866b; }
-  .pos-products { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-content: start; }
+  .pos-category { min-height: var(--button-height); flex-shrink: 0; border: 1px solid var(--color-border); }
+  .pos-category[aria-pressed='true'] { background: rgb(var(--success) / .12); color: rgb(var(--success)); border-color: rgb(var(--success) / .5); }
+  .pos-products { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--component-gap); align-content: start; }
   .pos-product { position: relative; background: var(--color-card); border: 1px solid var(--color-border); border-radius: 14px; padding: 12px; transition: border-color 160ms; overflow: hidden; }
   .pos-product:hover, .pos-product:focus-within { border-color: #34d399; }
-  .pos-product .product-edit { opacity: 1; }
-  .pos-cart { position: sticky; top: 96px; min-width: 0; padding: 20px; background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; }
+  .pos-product .product-edit { opacity: 1; min-width: var(--control-icon-size); min-height: var(--control-icon-size); }
+  .pos-cart { position: sticky; top: calc(var(--app-header-height) + 16px); min-width: 0; padding: var(--card-padding); background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px; }
   .pos-cart button { min-height: 36px; }
   .pos-cart button:has(> svg:only-child) { min-width: 36px; }
-  .clock-display { font-size: clamp(5rem, 10vw, 11rem); font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.07em; }
-  .tournament-clock:fullscreen, .tournament-clock.clock-fullscreen { border-radius: 0; }
+  .tournament-clock {
+    container: tournament-clock / inline-size;
+    --clock-title-size: clamp(1.25rem, 2.5cqw, 1.875rem);
+    --clock-level-size: clamp(1.875rem, 3.4cqw, 2.25rem);
+    --clock-blinds-size: clamp(2rem, 4.5cqw, 3.25rem);
+    --clock-ante-size: clamp(1.5rem, 2.8cqw, 2rem);
+    --clock-timer-size: clamp(5rem, 13cqw, 10rem);
+    --clock-number-size: clamp(1.125rem, 2.2cqw, 1.625rem);
+    --clock-label-size: .75rem;
+    --clock-gap: 12px;
+    min-width: 0;
+  }
+  .clock-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; padding: 12px 16px; flex-shrink: 0; }
+  .clock-brand { min-width: 0; }
+  .clock-heading { grid-column: 1 / -1; grid-row: 2; }
+  .clock-header-tools { grid-column: 2; grid-row: 1; flex-shrink: 0; }
+  .clock-title { font-size: var(--clock-title-size); line-height: 1.2; overflow-wrap: anywhere; text-wrap: balance; }
+  .clock-heading > p { font-size: .9375rem; margin-top: 6px; }
+  .clock-main { display: grid; grid-template-areas: "center" "statistics"; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--clock-gap); padding: var(--clock-gap); min-width: 0; }
+  .clock-main-with-prizes { grid-template-areas: "center" "statistics" "prizes"; }
+  .clock-statistics { grid-area: statistics; display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px; border-radius: 12px; }
+  .clock-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; text-align: center; }
+  .clock-metrics > div:first-child { grid-column: 1 / -1; }
+  .clock-metrics dt { color: rgb(var(--muted)); font-size: var(--clock-label-size); font-weight: 700; line-height: 1.4; }
+  .clock-metrics dd { font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: var(--clock-number-size); font-weight: 700; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; margin-top: 2px; }
+  .clock-metrics dd > span:not(.sr-only) { font-size: .75rem; white-space: nowrap; }
+  .clock-break h3, .clock-break > p:not(.clock-break-countdown), .clock-break dl { font-size: var(--clock-label-size); }
+  .clock-break-countdown { font-size: clamp(1.375rem, 2.6cqw, 2rem); line-height: 1.2; }
+  .clock-center { grid-area: center; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 12px 0; }
+  .clock-level { font-size: var(--clock-level-size); line-height: 1.15; }
+  .clock-center [data-registration-end], .clock-level-row > span { font-size: clamp(.8125rem, 1.5cqw, 1rem); margin-top: 6px; }
+  .clock-blinds { width: 100%; margin-top: 16px; }
+  .clock-blinds-values { font-size: var(--clock-blinds-size); line-height: 1.2; overflow-wrap: anywhere; }
+  .clock-ante { margin-top: 8px; font-size: var(--clock-ante-size); }
+  .clock-blinds > p:not(.clock-blinds-values) { font-size: 1rem; }
+  .clock-display { max-width: 100%; margin: 24px 0; font-size: var(--clock-timer-size); font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.07em; white-space: nowrap; }
+  .clock-next-level { max-width: 100%; margin-top: 16px; padding: 12px 20px; }
+  .clock-next-level > span { font-size: .875rem; }
+  .clock-next-level p { font-size: clamp(1rem, 1.8cqw, 1.375rem); overflow-wrap: anywhere; }
+  .clock-prizes { grid-area: prizes; min-width: 0; padding: 0; border-radius: 12px; }
+  .tournament-clock .clock-prize-panel { padding: 12px; }
+  .tournament-clock .clock-prize-ranks { max-height: min(300px, 45dvh); scrollbar-gutter: stable; margin-top: 10px; }
+  .tournament-clock .clock-prize-panel h3 { font-size: var(--clock-label-size); }
+  .tournament-clock .clock-prize-panel > div > p { font-size: clamp(1.5rem, 2.6cqw, 2rem); line-height: 1.2; }
+  .tournament-clock .clock-prize-ranks dt { font-size: var(--clock-label-size); }
+  .tournament-clock .clock-prize-ranks dd { font-size: clamp(.875rem, 1.5cqw, 1.125rem); font-variant-numeric: tabular-nums; }
+  .tournament-clock .clock-prize-ranks > div { padding: 6px 8px; gap: 8px; flex-wrap: wrap; }
+  .clock-shortcuts { display: none; }
+  .clock-operator-bar > div { min-width: 0; }
+  .tournament-clock.clock-fullscreen {
+    height: 100dvh;
+    --button-sm-height: 44px;
+    --button-height: 44px;
+    --button-lg-height: 48px;
+    --control-icon-size: 44px;
+    --clock-title-size: clamp(2rem, 2.6cqw, 2.625rem);
+    --clock-level-size: clamp(2.5rem, 3.4cqw, 3.25rem);
+    --clock-blinds-size: clamp(3.75rem, 4.8cqw, 5rem);
+    --clock-ante-size: clamp(2rem, 2.8cqw, 2.75rem);
+    --clock-timer-size: clamp(7.5rem, min(13cqw, 24dvh), 11.25rem);
+    --clock-number-size: clamp(1.5rem, 2.2cqw, 2.5rem);
+    --clock-label-size: clamp(.875rem, 1cqw, 1.125rem);
+    --clock-gap: clamp(12px, 1.2cqw, 24px);
+  }
+  .clock-fullscreen > .clock-main { flex: 1; min-height: 0; overflow-y: auto; align-items: safe center; }
+  .clock-fullscreen .clock-heading > p { font-size: clamp(1rem, 1.25cqw, 1.3125rem); }
+  .clock-fullscreen .clock-statistics { gap: 12px; padding: 12px; }
+  .clock-fullscreen .clock-metrics { grid-template-columns: 1fr; gap: 8px; }
+  .clock-fullscreen .clock-break-countdown { font-size: clamp(1.75rem, 2.5cqw, 2.75rem); }
+  .clock-fullscreen .clock-next-level p { font-size: clamp(1.125rem, 1.8cqw, 1.75rem); }
+  .tournament-clock.clock-fullscreen .clock-prize-ranks { max-height: min(560px, 55dvh); }
+  .tournament-clock.clock-fullscreen .clock-prize-panel > div > p { font-size: clamp(2rem, 2.8cqw, 2.75rem); }
+  .tournament-clock.clock-fullscreen .clock-prize-ranks dd { font-size: clamp(1.125rem, 1.4cqw, 1.625rem); }
+  .clock-with-background {
+    --canvas: 11 17 27;
+    --field: 15 23 42;
+    --card: 18 28 41;
+    --raised: 25 38 53;
+    --content: 237 243 248;
+    --secondary: 203 213 225;
+    --muted: 203 213 225;
+    --line: 71 85 105;
+    --line-strong: 100 116 139;
+    --success: 110 231 183;
+    --warning: 251 191 36;
+    --info: 56 189 248;
+    --danger: 251 113 133;
+    --color-gold: #d8b56c;
+    --color-primary: #34d399;
+    color-scheme: dark;
+    --color-card: rgb(var(--card));
+    --color-raised: rgb(var(--raised));
+    --color-border: rgb(var(--line));
+    --color-foreground: rgb(var(--content));
+    --color-muted: rgb(var(--muted));
+  }
+  /* Side panels retain their scrims; the central clock shows the configured image. */
+  .clock-with-background .clock-statistics,
+  .clock-with-background .clock-prizes { background: rgb(8 15 25 / .72); }
+  .clock-with-background .clock-header { background: rgb(8 15 25 / .85); }
+  .clock-with-background .clock-center { text-shadow: 0 2px 8px rgb(0 0 0 / .8); }
+  .clock-with-background .clock-display { text-shadow: 0 2px 12px rgb(0 0 0 / .4); }
 }
 @layer utilities {
-  .text-slate-500 { color: #a0aec0; }
-  .text-slate-600 { color: #95a5b8; }
-  .text-slate-400 { color: #aab8c9; }
+  /* Compatibility for the unchanged authorization view. Receipts keep fixed print colors. */
+  .app-shell .bg-slate-900 { background-color: rgb(var(--field)); }
+  .app-shell .text-slate-100 { color: rgb(var(--content)); }
+  .app-shell .text-slate-400 { color: rgb(var(--muted)); }
+  .app-shell .border-slate-800 { border-color: rgb(var(--line)); }
   .text-\[10px\], .text-\[11px\] { font-size: 12px; }
   .shadow-glow-green, .shadow-glow-gold { box-shadow: none; }
 }
@@ -98,11 +294,36 @@
   .pos-cart { position: static; }
   .pos-products { gap: 12px; }
   .pos-cart button { min-height: 44px; }
-  .clock-main { display: flex !important; flex-direction: column; }
-  .clock-center { order: -1; min-height: 400px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+@container tournament-clock (min-width: 640px) {
+  .clock-header { grid-template-columns: minmax(100px, .7fr) minmax(0, 4fr) minmax(100px, .7fr); }
+  .clock-heading { grid-column: 2; grid-row: 1; }
+  .clock-header-tools { grid-column: 3; grid-row: 1; }
+  .clock-main { grid-template-areas: "center center" "statistics statistics"; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .clock-main-with-prizes { grid-template-areas: "center center" "statistics prizes"; }
+}
+@container tournament-clock (min-width: 980px) {
+  .clock-main { grid-template-areas: "statistics center"; grid-template-columns: minmax(150px, .9fr) minmax(0, 4fr); }
+  .clock-main-with-prizes { grid-template-areas: "statistics center prizes"; grid-template-columns: minmax(190px, 1fr) minmax(0, 3fr) minmax(190px, 1fr); }
+  .clock-metrics { gap: 8px; }
+  .clock-fullscreen .clock-shortcuts { display: inline; }
+}
+@container workspace (max-width: 859px) {
+  .pos-workspace { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .pos-cart { position: static; }
+}
+@container workspace (min-width: 860px) {
+  .pos-workspace { grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+  .pos-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container workspace (min-width: 1040px) {
+  .pos-products { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container workspace (min-width: 1480px) {
+  .pos-products { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media print {
   .app-shell > aside, .app-shell header, .app-shell nav, .skip-link { display: none !important; }

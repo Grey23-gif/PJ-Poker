@@ -15,15 +15,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const messageId = `${inputId}-message`;
 
     return (
-      <div className="w-full">
+      <div className="w-full min-w-0">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label htmlFor={inputId} className="block text-[length:var(--form-label-size)] font-medium text-secondary mb-[var(--form-label-gap)]">
             {label}
           </label>
         )}
         <div className="relative rounded-lg shadow-sm">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
               {leftIcon}
             </div>
           )}
@@ -32,21 +32,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? messageId : undefined}
             ref={ref}
-            className={`w-full bg-slate-900/90 border ${
-              error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-700/80 focus:border-emerald-500 focus:ring-emerald-500/20'
-            } text-slate-100 placeholder-slate-500 text-sm rounded-[10px] min-h-11 py-2.5 ${
-              leftIcon ? 'pl-9' : 'pl-3.5'
-            } ${rightIcon ? 'pr-14' : 'pr-3.5'} focus:outline-none focus:ring-2 transition-all duration-150 disabled:bg-slate-800/50 disabled:text-slate-500 disabled:cursor-not-allowed ${className}`}
+            className={`w-full min-w-0 max-w-full bg-field border ${
+              error ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20' : 'border-line-strong/80 focus:border-emerald-500 focus:ring-emerald-500/20'
+            } text-content placeholder-muted text-sm leading-5 rounded-[10px] min-h-[var(--input-height)] py-[var(--control-padding-y)] ${
+              leftIcon ? 'pl-9' : 'pl-3'
+            } ${rightIcon ? 'pr-12' : 'pr-3'} focus:outline-none focus:ring-2 transition-all duration-150 disabled:bg-raised/50 disabled:text-muted disabled:cursor-not-allowed ${className}`}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-1 flex items-center text-slate-400 [&_button]:min-h-11 [&_button]:min-w-11 [&_button]:flex [&_button]:items-center [&_button]:justify-center">
+            <div className="absolute inset-y-0 right-0 pr-1 flex items-center text-muted [&_button]:min-h-[var(--control-icon-size)] [&_button]:min-w-[var(--control-icon-size)] [&_button]:flex [&_button]:items-center [&_button]:justify-center">
               {rightIcon}
             </div>
           )}
         </div>
-        {error && <p id={messageId} role="alert" className="mt-1.5 text-xs text-rose-400">{error}</p>}
-        {helperText && !error && <p id={messageId} className="mt-1 text-xs text-slate-400">{helperText}</p>}
+        {error && <p id={messageId} role="alert" className="mt-1.5 text-xs text-danger">{error}</p>}
+        {helperText && !error && <p id={messageId} className="mt-1 text-xs text-muted">{helperText}</p>}
       </div>
     );
   }

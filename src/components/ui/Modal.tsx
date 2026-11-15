@@ -1,6 +1,9 @@
-﻿import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+
+let openModalCount = 0;
+let previousBodyOverflow = '';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -10,10 +13,12 @@ export interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | 'full';
   showCloseButton?: boolean;
+  locale?: 'vi' | 'en';
+  footer?: React.ReactNode;
 }
 
 export const Modal: React.FC<ModalProps> = ({
-  isOpen, onClose, title, description, children, maxWidth = 'lg', showCloseButton = true,
+  isOpen, onClose, title, description, children, maxWidth = 'lg', showCloseButton = true, locale = 'vi', footer,
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -22,13 +27,15 @@ export const Modal: React.FC<ModalProps> = ({
     if (!isOpen) return;
     const dialog = dialogRef.current;
     const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
     dialog?.showModal();
+    if (openModalCount === 0) previousBodyOverflow = document.body.style.overflow;
+    openModalCount++;
     document.body.style.overflow = 'hidden';
     return () => {
       dialog?.close();
-      document.body.style.overflow = previousOverflow;
-      previousFocus?.focus();
+      openModalCount = Math.max(0, openModalCount - 1);
+      if (openModalCount === 0) document.body.style.overflow = previousBodyOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, [isOpen]);
 
@@ -38,25 +45,27 @@ export const Modal: React.FC<ModalProps> = ({
   return createPortal(
     <dialog
       ref={dialogRef}
+      lang={locale}
       aria-labelledby={title ? titleId : undefined}
-      aria-label={title ? undefined : 'Hộp thoại'}
+      aria-label={title ? undefined : locale === 'en' ? 'Dialog' : 'Hộp thoại'}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => { event.preventDefault(); onClose(); }}
       onKeyDown={(event) => event.stopPropagation()}
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
-      className="fixed inset-0 m-0 w-full max-w-none h-full max-h-none bg-transparent p-3 sm:p-6 text-slate-100 open:flex items-center justify-center backdrop:bg-black/80 backdrop:backdrop-blur-sm"
+      className="fixed inset-0 m-0 w-full max-w-none h-full max-h-none bg-transparent p-3 sm:p-6 text-content open:flex items-center justify-center backdrop:bg-black/80 backdrop:backdrop-blur-sm"
     >
-      <div className={`surface-card relative w-full ${widths[maxWidth]} shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden`}>
+      <div className={`surface-card relative min-w-0 w-full ${widths[maxWidth]} shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] overflow-hidden`}>
         {(title || showCloseButton) && (
-          <div className="px-5 sm:px-6 py-5 border-b border-surface-border flex items-start justify-between gap-4 shrink-0">
-            <div>
-              <h2 id={titleId} className="text-base sm:text-lg font-semibold">{title}</h2>
-              {description && <p id={descriptionId} className="text-sm text-slate-400 mt-1">{description}</p>}
+          <div className="px-[var(--card-padding)] py-[var(--component-gap)] border-b border-surface-border flex items-start justify-between gap-3 shrink-0">
+            <div className="min-w-0 break-words">
+              <h2 id={titleId} className="text-base font-semibold">{title}</h2>
+              {description && <p id={descriptionId} className="text-sm text-muted mt-1">{description}</p>}
             </div>
-            {showCloseButton && <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" title="Đóng (Esc)" className="min-w-11 min-h-11 -m-2 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-surface-hover"><X className="w-5 h-5" aria-hidden="true" /></button>}
+            {showCloseButton && <button type="button" onClick={onClose} aria-label={locale === 'en' ? 'Close dialog' : 'Đóng hộp thoại'} title={locale === 'en' ? 'Close (Esc)' : 'Đóng (Esc)'} className="min-w-[var(--control-icon-size)] min-h-[var(--control-icon-size)] -m-2 flex items-center justify-center rounded-lg text-muted hover:text-content hover:bg-surface-hover"><X className="w-5 h-5" aria-hidden="true" /></button>}
           </div>
         )}
-        <div className="p-5 sm:p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+        <div className="modal-content p-[var(--card-padding)] overflow-y-auto flex-1 min-h-0 min-w-0">{children}</div>
+        {footer && <div className="shrink-0 border-t border-line bg-surface p-[var(--card-padding)] flex flex-wrap justify-end gap-3">{footer}</div>}
       </div>
     </dialog>, document.body,
   );

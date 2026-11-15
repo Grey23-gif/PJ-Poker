@@ -35,32 +35,32 @@ export const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-[var(--section-gap)] max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-100">Hồ Sơ Cá Nhân</h1>
-        <p className="text-sm text-slate-400">
+        <h1 className="page-title text-2xl font-bold text-content">Hồ Sơ Cá Nhân</h1>
+        <p className="text-sm text-muted">
           Xem và quản lý thông tin tài khoản, cấp bậc hội viên và bảo mật
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--section-gap)]">
         {/* Left Card: Avatar & Summary */}
-        <Card className="p-6 text-center space-y-4">
+        <Card className="p-[var(--card-padding)] text-center space-y-4">
           <div className="relative inline-block mx-auto">
             <img
               src={avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200'}
               alt={fullName}
-              className="w-24 h-24 rounded-full object-cover border-2 border-emerald-500/50 shadow-xl mx-auto"
+              className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500/50 mx-auto"
             />
-            <div className="absolute bottom-0 right-0 p-1.5 bg-slate-900 rounded-full border border-slate-700">
-              <Crown className="w-4 h-4 text-amber-400" />
+            <div className="absolute bottom-0 right-0 p-1.5 bg-field rounded-full border border-line-strong">
+              <Crown className="w-4 h-4 text-warning" />
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-100">{currentUser?.fullName}</h3>
-            <p className="text-xs text-slate-400 font-mono">@{currentUser?.username}</p>
+            <h3 className="text-lg font-bold text-content">{currentUser?.fullName}</h3>
+            <p className="text-xs text-muted font-mono">@{currentUser?.username}</p>
             <div className="mt-2 flex justify-center gap-1.5">
               <StatusBadge status={currentUser?.role || 'PLAYER'} />
               {currentUser?.playerStats && (
@@ -70,20 +70,20 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {currentUser?.playerStats && (
-            <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-3 text-left bg-surface p-3 rounded-xl text-xs">
+            <div className="pt-4 border-t border-line grid grid-cols-2 gap-3 text-left bg-surface p-3 rounded-xl text-xs">
               <div>
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" /> Điểm Tích Lũy
+                <span className="text-muted flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5 text-warning" /> Điểm Tích Lũy
                 </span>
-                <span className="text-base font-bold text-amber-400">
+                <span className="text-base font-bold text-warning">
                   {formatNumber(currentUser.playerStats.currentPoints)}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Trophy className="w-3.5 h-3.5 text-emerald-400" /> Tour Vô Địch
+                <span className="text-muted flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5 text-success" /> Tour Vô Địch
                 </span>
-                <span className="text-base font-bold text-emerald-400">
+                <span className="text-base font-bold text-success">
                   {currentUser.playerStats.toursWon} / {currentUser.playerStats.totalToursPlayed}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export const ProfilePage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
                 <Input
                   label="Họ và tên"
                   value={fullName}
@@ -126,7 +126,7 @@ export const ProfilePage: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
                 <Input
                   label="Email liên lạc"
                   type="email"
@@ -149,18 +149,18 @@ export const ProfilePage: React.FC = () => {
                 placeholder="https://..."
               />
 
-              <div className="p-3 bg-surface rounded-xl border border-slate-800 text-xs flex justify-between items-center text-slate-400">
+              <div className="p-3 bg-surface rounded-xl border border-line text-xs flex justify-between items-center text-muted">
                 <span className="flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-emerald-400" />
+                  <Shield className="w-4 h-4 text-success" />
                   Trạng thái tài khoản:
                 </span>
-                <span className="font-semibold text-emerald-400">Đã Kích Hoạt (Hoạt Động)</span>
+                <span className="font-semibold text-success">Đã Kích Hoạt (Hoạt Động)</span>
                 <span>Ngày tạo: {formatDate(currentUser?.createdAt)}</span>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3">
                 {isSaved && (
-                  <span className="text-xs text-emerald-400 flex items-center gap-1">
+                  <span className="text-xs text-success flex items-center gap-1">
                     <Check className="w-4 h-4" /> Đã lưu thông tin
                   </span>
                 )}

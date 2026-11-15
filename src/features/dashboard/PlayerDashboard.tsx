@@ -36,14 +36,14 @@ export const PlayerDashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-[var(--section-gap)] max-w-6xl mx-auto">
       {/* Welcome banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[var(--component-gap)]">
         <div>
-          <h1 className="text-2xl font-semibold text-white flex flex-wrap items-center gap-2">
+          <h1 className="page-title text-2xl font-semibold text-content flex flex-wrap items-center gap-2">
             Cổng Thông Tin Hội Viên
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-muted">
             Theo dõi điểm tích lũy phong trào, lịch sử giải đấu và bảng xếp hạng câu lạc bộ
           </p>
         </div>
@@ -62,17 +62,17 @@ export const PlayerDashboard: React.FC = () => {
       </div>
 
       {/* Member Card & Key Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--section-gap)]">
         {/* VIP Member Card */}
-        <div className="relative rounded-2xl p-6 bg-surface border border-emerald-500/40 shadow-2xl overflow-hidden flex flex-col justify-between h-56 text-white group">
+        <div className="relative rounded-2xl p-[var(--card-padding)] bg-surface border border-emerald-500/40 overflow-hidden flex flex-col justify-between gap-3 min-h-48 text-content group">
           <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 -right-8 text-8xl text-emerald-500/10 font-bold select-none">
+          <div className="absolute -bottom-8 -right-8 text-8xl text-success/10 font-bold select-none">
             ♠
           </div>
 
           <div className="flex justify-between items-start z-10">
             <div>
-              <span className="text-xs font-mono tracking-widest text-emerald-400 uppercase">
+              <span className="text-xs font-mono tracking-widest text-success uppercase">
                 ROYAL POKER CLUB
               </span>
               <h3 className="text-lg font-bold mt-0.5 tracking-wide">{currentUser?.fullName}</h3>
@@ -81,35 +81,35 @@ export const PlayerDashboard: React.FC = () => {
           </div>
 
           <div className="z-10 space-y-1">
-            <span className="text-xs text-slate-400 uppercase tracking-wider">Điểm Tích Lũy</span>
-            <div className="text-3xl font-semibold text-amber-400 tracking-tight flex items-center gap-2">
-              <Coins className="w-6 h-6 text-amber-400" />
+            <span className="text-xs text-muted uppercase tracking-wider">Điểm Tích Lũy</span>
+            <div className="text-3xl font-semibold text-warning tracking-tight flex items-center gap-2">
+              <Coins className="w-6 h-6 text-warning" />
               {formatNumber(currentPoints)}
-              <span className="text-xs font-normal text-slate-400">Pts</span>
+              <span className="text-xs font-normal text-muted">Pts</span>
             </div>
           </div>
 
-          <div className="flex justify-between items-end text-xs text-slate-400 font-mono z-10 border-t border-slate-700/50 pt-2">
+          <div className="flex justify-between items-end text-xs text-muted font-mono z-10 border-t border-line-strong/50 pt-2">
             <span>ID: {currentUser?.username.toUpperCase()}</span>
             <span>Hạng CLB: #{myRank}</span>
           </div>
         </div>
 
         {/* 2 Stats summary cards */}
-        <Card className="p-6 flex flex-col justify-between">
+        <Card className="p-[var(--card-padding)] flex flex-col justify-between">
           <div className="space-y-1">
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            <span className="text-xs text-muted uppercase tracking-wider font-semibold">
               Thành Tích Giải Đấu
             </span>
-            <div className="text-3xl font-bold text-white mt-2">
+            <div className="text-3xl font-bold text-content mt-2">
               {currentUser?.playerStats?.toursWon || 0} / {currentUser?.playerStats?.totalToursPlayed || 0}
             </div>
-            <p className="text-xs text-emerald-400 font-medium">Chiến thắng / Tham gia</p>
+            <p className="text-xs text-success font-medium">Chiến thắng / Tham gia</p>
           </div>
-          <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 space-y-1.5">
+          <div className="pt-4 border-t border-line text-xs text-muted space-y-1.5">
             <div className="flex justify-between">
               <span>Tỷ lệ vô địch (Win Rate):</span>
-              <strong className="text-white">
+              <strong className="text-content">
                 {currentUser?.playerStats?.totalToursPlayed
                   ? (
                       ((currentUser.playerStats.toursWon || 0) /
@@ -122,26 +122,26 @@ export const PlayerDashboard: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span>Vị trí trên Leaderboard:</span>
-              <strong className="text-amber-400">Hạng #{myRank}</strong>
+              <strong className="text-warning">Hạng #{myRank}</strong>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 flex flex-col justify-between">
+        <Card className="p-[var(--card-padding)] flex flex-col justify-between">
           <div className="space-y-1">
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            <span className="text-xs text-muted uppercase tracking-wider font-semibold">
               Quy Chế Điểm Thưởng
             </span>
             <div className="flex items-center gap-2 mt-2">
-              <Sparkles className="w-6 h-6 text-amber-400" />
-              <span className="text-lg font-bold text-slate-100">Điểm Phong Trào CLB</span>
+              <Sparkles className="w-6 h-6 text-warning" />
+              <span className="text-lg font-bold text-content">Điểm Phong Trào CLB</span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Điểm thưởng thành tích được cộng sau mỗi giải đấu thể thao trí tuệ.
             </p>
           </div>
 
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 space-y-1">
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-warning space-y-1">
             <div className="flex items-center gap-1 font-semibold">
               <Info className="w-3.5 h-3.5" /> Lưu ý quy chế:
             </div>
@@ -151,48 +151,49 @@ export const PlayerDashboard: React.FC = () => {
       </div>
 
       {/* Participated Tours and Point Transactions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--section-gap)]">
         {/* Tournaments history */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>
-              <Trophy className="w-4 h-4 text-emerald-400" />
+              <Trophy className="w-4 h-4 text-success" />
               Giải Đấu Đã Tham Gia
             </CardTitle>
-            <Link to="/tours" className="text-xs text-emerald-400 hover:underline">
+            <Link to="/tours" className="text-xs text-success hover:underline">
               Xem tất cả tour
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {myParticipatedTours.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 text-xs">
+              <div className="py-8 text-center text-muted text-xs">
                 Bạn chưa tham gia giải đấu nào gần đây.
               </div>
             ) : (
               myParticipatedTours.map((tour) => {
-                const participantInfo = tour.participants.find((p) => p.playerId === playerId);
+                const participantInfo = tour.participants.find((p) => p.playerId === playerId && !p.isEliminated)
+                  || tour.participants.filter((p) => p.playerId === playerId).at(-1);
                 return (
                   <div
                     key={tour.id}
-                    className="p-3 bg-surface rounded-xl border border-slate-800 flex items-center justify-between text-xs"
+                    className="p-3 bg-surface rounded-xl border border-line flex items-center justify-between text-xs"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-100">{tour.name}</span>
+                        <span className="font-semibold text-content">{tour.name}</span>
                         <StatusBadge status={tour.status} />
                       </div>
-                      <div className="text-xs text-slate-400 mt-1">
-                        Khởi tranh: {formatDateTime(tour.scheduledStartTime)}
+                      <div className="text-xs text-muted mt-1">
+                        {tour.status === 'CREATED' ? 'Chưa bắt đầu' : 'Đã khởi tạo giải'}
                       </div>
                     </div>
 
                     <div className="text-right">
                       {participantInfo?.isEliminated ? (
-                        <span className="text-slate-400">
+                        <span className="text-muted">
                           Hạng dừng: #{participantInfo.eliminatedRank}
                         </span>
                       ) : (
-                        <span className="text-emerald-400 font-bold">
+                        <span className="text-success font-bold">
                           {formatNumber(participantInfo?.currentChips || 0)} chips
                         </span>
                       )}
@@ -208,27 +209,27 @@ export const PlayerDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>
-              <Coins className="w-4 h-4 text-amber-400" />
+              <Coins className="w-4 h-4 text-warning" />
               Lịch Sử Biến Động Điểm
             </CardTitle>
-            <Link to="/leaderboard" className="text-xs text-amber-400 hover:underline">
+            <Link to="/leaderboard" className="text-xs text-warning hover:underline">
               Bảng xếp hạng CLB
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {transactions.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 text-xs">
+              <div className="py-8 text-center text-muted text-xs">
                 Chưa có giao dịch điểm nào được ghi nhận.
               </div>
             ) : (
               transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="p-3 bg-surface rounded-xl border border-slate-800 flex items-center justify-between text-xs"
+                  className="p-3 bg-surface rounded-xl border border-line flex items-center justify-between text-xs"
                 >
                   <div className="space-y-0.5">
-                    <div className="font-semibold text-slate-200">{tx.description}</div>
-                    <div className="text-xs text-slate-400">
+                    <div className="font-semibold text-content">{tx.description}</div>
+                    <div className="text-xs text-muted">
                       {formatDateTime(tx.createdAt)} • Người cấp: {tx.createdByName}
                     </div>
                   </div>
@@ -236,12 +237,12 @@ export const PlayerDashboard: React.FC = () => {
                   <div className="text-right">
                     <div
                       className={`font-bold text-sm ${
-                        tx.amount > 0 ? 'text-emerald-400' : 'text-rose-400'
+                        tx.amount > 0 ? 'text-success' : 'text-danger'
                       }`}
                     >
                       {tx.amount > 0 ? `+${formatNumber(tx.amount)}` : formatNumber(tx.amount)}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-muted">
                       Số dư: {formatNumber(tx.balanceAfter)}
                     </div>
                   </div>

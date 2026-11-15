@@ -1,271 +1,72 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useTournamentStore } from '../../stores/tournamentStore';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useTournamentTemplateStore } from '../../stores/tournamentTemplateStore';
+import { useTournamentSessionStore } from '../../stores/tournamentSessionStore';
 import { useAuthStore } from '../../stores/authStore';
+import type { TournamentTemplate } from '../../types/tournamentTemplate';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card } from '../../components/ui/Card';
-import { StatusBadge } from '../../components/ui/Badge';
-import { TourFormModal } from './TourFormModal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { Tournament, TourStatus } from '../../types/tournament';
-import { formatDateTime, formatNumber } from '../../utils/formatters';
-import {
-  Trophy,
-  Plus,
-  Clock,
-  Play,
-  Pause,
-  Edit2,
-  Trash2,
-  Search,
-  Users,
-  ChevronRight,
-  ExternalLink,
-} from 'lucide-react';
+import { TournamentCover } from './TournamentCover';
+import { TourFormModal } from './TourFormModal';
+import { getTournamentStatistics } from '../../utils/tournamentStatistics';
+import { clockStageName } from '../../utils/tournamentRegistration';
+import { TournamentHistory } from './TournamentHistory';
 
-export const TourListPage: React.FC = () => {
-  const { tournaments, startTournament, pauseTournament, resumeTournament, deleteTournament } =
-    useTournamentStore();
+const statuses = { CREATED: 'Chưa bắt đầu', PAUSED: 'Tạm dừng', RUNNING: 'Đang chạy', FINISHED: 'Đã chốt · FINISHED', COMPLETED: 'Đã kết thúc', CANCELLED: 'Đã lưu lịch sử' };
+export const TourListPage = () => {
+  const { templates, deleteTemplate, loadError } = useTournamentTemplateStore();
+  const { tournaments, createSession } = useTournamentSessionStore();
   const { currentUser, hasPermission } = useAuthStore();
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [tourToEdit, setTourToEdit] = useState<Tournament | null>(null);
-  const [tourToDelete, setTourToDelete] = useState<Tournament | null>(null);
-
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [editing, setEditing] = useState<TournamentTemplate | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleting, setDeleting] = useState<TournamentTemplate | null>(null);
   const canManage = currentUser?.role === 'ADMIN' || hasPermission('TOUR_MANAGE');
-  const canOperate = currentUser?.role === 'ADMIN' || hasPermission('TOUR_OPERATE');
-
-  const filteredTournaments = tournaments.filter((tour) => {
-    const matchesSearch =
-      tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tour.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || tour.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  return (
-    <div className="space-y-6">
-      {/* Page Title & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white flex flex-wrap items-center gap-2">
-            Quản Lý Giải Đấu Poker
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Theo dõi, khởi tạo và điều hành giải đấu câu lạc bộ và đồng hồ giải đấu
-          </p>
-        </div>
-
-        {canManage && (
-          <Button
-            variant="gold"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => {
-              setTourToEdit(null);
-              setIsFormModalOpen(true);
-            }}
-          >
-            Tạo Giải Đấu Mới
-          </Button>
-        )}
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-slate-800">
-        <div className="w-full sm:w-80">
-          <Input
-            aria-label="Tìm kiếm giải đấu theo mã, tên giải..."
-              placeholder="Tìm kiếm giải đấu theo mã, tên giải..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            leftIcon={<Search className="w-4 h-4" />}
-          />
-        </div>
-
-        <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
-          <span className="text-slate-400">Trạng thái:</span>
-          <select
-            aria-label="Lọc theo trạng thái"
-              value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"
-          >
-            <option value="ALL">Tất cả trạng thái ({tournaments.length})</option>
-            <option value="RUNNING">Đang diễn ra</option>
-            <option value="PAUSED">Tạm dừng</option>
-            <option value="CREATED">Sắp diễn ra</option>
-            <option value="COMPLETED">Đã kết thúc</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Tournament Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredTournaments.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-slate-800">
-            Không tìm thấy giải đấu nào phù hợp với bộ lọc.
-          </div>
-        ) : (
-          filteredTournaments.map((tour) => {
-            const currentStage = tour.structure.stages[tour.currentStageIndex];
-            const isRunning = tour.status === 'RUNNING';
-
-            return (
-              <Card
-                key={tour.id}
-                glow={isRunning ? 'green' : 'none'}
-                className={`p-5 flex flex-col justify-between transition-all duration-200 ${
-                  isRunning ? 'border-emerald-600/50 bg-[#0d162a]' : ''
-                }`}
-              >
-                <div className="space-y-3">
-                  {/* Status & Code */}
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-amber-400 font-bold">
-                      {tour.code}
-                    </span>
-                    <StatusBadge status={tour.status} />
-                  </div>
-
-                  {/* Tour Name & Description */}
-                  <div>
-                    <h3 className="font-bold text-slate-100 text-base line-clamp-1">
-                      {tour.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                      {tour.description || 'Giải đấu câu lạc bộ thể thao trí tuệ.'}
-                    </p>
-                  </div>
-
-                  {/* Highlights info block */}
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-surface border border-slate-800/80 text-xs text-slate-300">
-                    <div>
-                      <span className="text-xs text-slate-500 block uppercase">Khởi tranh</span>
-                      <span className="font-medium">{formatDateTime(tour.scheduledStartTime)}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block uppercase">Chip khởi đầu</span>
-                      <span className="font-mono font-bold text-amber-400">
-                        {formatNumber(tour.startingChips)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block uppercase">Vận động viên</span>
-                      <span className="font-semibold text-slate-200 flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        {tour.participants.length} / {tour.maxPlayers}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 block uppercase">Cấp độ hiện tại</span>
-                      <span className="font-semibold text-emerald-400">
-                        {currentStage?.name || 'Level 1'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Actions */}
-                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                  <Link to={`/tours/clock/${tour.id}`}>
-                    <Button
-                      variant={isRunning ? 'gold' : 'secondary'}
-                      size="sm"
-                      leftIcon={<Clock className="w-3.5 h-3.5" />}
-                      className={isRunning ? '' : ''}
-                    >
-                      Đồng Hồ Clock
-                    </Button>
-                  </Link>
-
-                  <div className="flex items-center gap-1.5">
-                    {canOperate && (
-                      <>
-                        {tour.status === 'RUNNING' && (
-                          <button
-                            onClick={() => pauseTournament(tour.id)}
-                            className="p-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-colors"
-                            title="Tạm dừng giải đấu"
-                          >
-                            <Pause className="w-4 h-4" />
-                          </button>
-                        )}
-                        {tour.status === 'PAUSED' && (
-                          <button
-                            onClick={() => resumeTournament(tour.id)}
-                            className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
-                            title="Tiếp tục giải đấu"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                        )}
-                        {tour.status === 'CREATED' && (
-                          <button
-                            onClick={() => startTournament(tour.id)}
-                            className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
-                            title="Bắt đầu ngay"
-                          >
-                            <Play className="w-4 h-4" />
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {canManage && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setTourToEdit(tour);
-                            setIsFormModalOpen(true);
-                          }}
-                          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                          title="Chỉnh sửa giải đấu"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setTourToDelete(tour)}
-                          className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
-                          title="Xóa giải đấu"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })
-        )}
-      </div>
-
-      {/* Tour Create / Edit Modal */}
-      <TourFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setTourToEdit(null);
-        }}
-        tourToEdit={tourToEdit}
-      />
-
-      {/* Delete Tour Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={!!tourToDelete}
-        onClose={() => setTourToDelete(null)}
-        onConfirm={() => {
-          if (tourToDelete) deleteTournament(tourToDelete.id);
-        }}
-        title="Xác Nhận Xóa Giải Đấu"
-        message={`Bạn có chắc muốn xóa giải đấu "${tourToDelete?.name}"? Mọi thông tin chip và lịch sử vòng chơi sẽ bị xóa vĩnh viễn.`}
-        confirmText="Xác Nhận Xóa"
-        variant="danger"
-      />
+  const currentSessions = tournaments.filter((tour) => !tour.archivedAt && tour.status !== 'CANCELLED');
+  const historicalSessions = tournaments.filter((tour) => tour.archivedAt || tour.status === 'CANCELLED');
+  const matches = (name: string) => name.toLocaleLowerCase().includes(query.toLocaleLowerCase());
+  return <section className="space-y-[var(--section-gap)]">
+    <div className="flex flex-wrap justify-between gap-[var(--component-gap)]">
+      <div><h1 className="page-title text-2xl font-semibold text-content">Quản lý giải đấu</h1><p className="mt-2 text-sm text-muted">Mẫu giải lưu cấu hình cố định. Mỗi phiên giải có đồng hồ, người chơi và lịch sử riêng.</p></div>
+      {canManage && <Button variant="gold" leftIcon={<Plus className="w-4 h-4" />} onClick={() => { setEditing(null); setFormOpen(true); }}>Tạo mẫu giải</Button>}
     </div>
-  );
+    <Input label="Tìm mẫu hoặc phiên giải" value={query} onChange={(event) => setQuery(event.target.value)} />
+    {loadError && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger">{loadError}</p>}
+    <div className="space-y-4"><h2 className="text-xl font-semibold text-content">Mẫu giải đấu</h2>
+      <div className="tour-card-grid">
+        {templates.filter((item) => matches(item.name)).map((template) => <article key={template.id} className="rounded-2xl border border-line bg-surface p-[var(--card-padding)] space-y-4">
+          <TournamentCover config={template.tourBackground} title={template.name} />
+          <h3 className="text-lg font-semibold text-content break-words">{template.name}</h3>
+          <p className="text-sm text-muted">{template.description}</p>
+          <dl className="grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted">Starting Stack</dt><dd className="font-semibold text-content">{template.startingChips.toLocaleString('vi-VN')}</dd></div><div><dt className="text-muted">Blinds / Break</dt><dd className="text-content">{template.structure.stages.filter((stage) => stage.stageType === 'LEVEL').length} Level / {template.structure.stages.filter((stage) => stage.stageType === 'BREAK').length} Break</dd></div></dl>
+          <div className="flex flex-wrap gap-2">
+            {currentUser?.role === 'ADMIN' && <Button onClick={() => { try { const session = createSession(template.id); navigate(`/tours/clock/${session.id}`); } catch (error) { toast.error(error instanceof Error ? error.message : 'Không tạo được phiên giải.'); } }}>Tạo phiên mới</Button>}
+            {canManage && <><Button variant="outline" aria-label={`Chỉnh sửa mẫu ${template.name}`} leftIcon={<Edit2 className="w-4 h-4" />} onClick={() => { setEditing(template); setFormOpen(true); }}>Chỉnh sửa mẫu</Button><Button variant="outline" aria-label={`Xóa mẫu ${template.name}`} onClick={() => setDeleting(template)}><Trash2 className="w-4 h-4" /></Button></>}
+          </div>
+        </article>)}
+      </div>
+      {!templates.length && <p className="text-muted">Chưa có mẫu giải. Tạo mẫu trước khi mở phiên.</p>}
+    </div>
+    <div className="space-y-4"><h2 className="text-xl font-semibold text-content">Các phiên giải hiện tại</h2>
+      <div className="tour-card-grid">{currentSessions.filter((item) => matches(item.name)).map((session) => {
+        const statistics = getTournamentStatistics(session); const stage = session.structure.stages[session.currentStageIndex];
+        return <article key={session.id} className="rounded-2xl border border-line bg-surface p-[var(--card-padding)] space-y-3">
+          <h3 className="font-semibold text-content break-words">{session.name}</h3>
+          <p className="text-sm text-muted">{new Date(session.createdAt).toLocaleString('vi-VN')} · {statuses[session.status]}{session.rewardStatus === 'TOP_REWARD_PENDING' ? ' · Chờ duyệt TOP' : ''}</p>
+          <p className="text-xs text-muted break-all">Mã phiên: {session.id}</p>
+          <dl className="grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted">Total Entries</dt><dd className="text-content">{statistics.entries}</dd></div><div><dt className="text-muted">Players Remaining / Unique Players</dt><dd className="text-content">{statistics.playersRemaining} / {statistics.uniquePlayers}</dd></div></dl>
+          <p className="text-sm text-secondary">{stage && clockStageName(stage, session.structure.stages)}</p>
+          <Link className="inline-flex min-h-[var(--button-height)] items-center text-success underline underline-offset-4" to={`/tours/clock/${session.id}`}>Mở phiên giải</Link>
+        </article>;
+      })}</div>
+      {!currentSessions.length && <p className="text-muted">Chưa có phiên giải hiện tại. Chọn một mẫu và tạo phiên mới; mọi chỉ số bắt đầu từ 0.</p>}
+    </div>
+    {(currentUser?.role === 'ADMIN' || currentUser?.role === 'CASHIER') && <TournamentHistory sessions={historicalSessions} />}
+    {formOpen && <TourFormModal isOpen onClose={() => { setFormOpen(false); setEditing(null); }} tourToEdit={editing} />}
+    <ConfirmDialog isOpen={!!deleting} onClose={() => setDeleting(null)} title="Xóa mẫu giải?" message={`Xóa mẫu “${deleting?.name}”? Các phiên đang chạy và lịch sử vẫn được giữ nguyên.`} confirmText="Xóa mẫu" variant="danger" onConfirm={() => { if (deleting) { try { deleteTemplate(deleting.id); setDeleting(null); } catch (error) { toast.error(error instanceof Error ? error.message : 'Không xóa được mẫu.'); } } }} />
+  </section>;
 };
-

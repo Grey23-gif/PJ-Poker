@@ -13,6 +13,7 @@ export interface ConfirmDialogProps {
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'info';
   isLoading?: boolean;
+  locale?: 'vi' | 'en';
 }
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -25,11 +26,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   cancelText = 'Hủy bỏ',
   variant = 'danger',
   isLoading = false,
+  locale = 'vi',
 }) => {
   const icons = {
-    danger: <AlertTriangle className="w-10 h-10 text-rose-500" />,
-    warning: <AlertCircle className="w-10 h-10 text-amber-500" />,
-    info: <Info className="w-10 h-10 text-sky-500" />,
+    danger: <AlertTriangle className="w-10 h-10 text-danger" />,
+    warning: <AlertCircle className="w-10 h-10 text-warning" />,
+    info: <Info className="w-10 h-10 text-info" />,
   };
 
   const buttonVariants: Record<string, 'danger' | 'gold' | 'primary'> = {
@@ -39,12 +41,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="sm" showCloseButton={false}>
+    <Modal locale={locale} isOpen={isOpen} onClose={onClose} maxWidth="sm" showCloseButton={false}>
       <div className="text-center pt-2 pb-4">
         <div className="flex justify-center mb-3">{icons[variant]}</div>
-        <h4 className="text-lg font-semibold text-slate-100">{title}</h4>
-        <p className="text-sm text-slate-400 mt-2 px-2">{message}</p>
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <h4 className="text-lg font-semibold text-content">{title}</h4>
+        <p className="text-sm text-muted mt-2 px-2">{message}</p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>

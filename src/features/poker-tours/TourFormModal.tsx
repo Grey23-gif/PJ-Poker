@@ -3,14 +3,24 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { BlindStructureEditor } from './BlindStructureEditor';
-import { Tournament, BlindStructureConfig } from '../../types/tournament';
-import { useTournamentStore } from '../../stores/tournamentStore';
+import { BlindStructureConfig } from '../../types/tournament';
+import { useTournamentTemplateStore } from '../../stores/tournamentTemplateStore';
+import type { TournamentTemplate } from '../../types/tournamentTemplate';
 import { useAuthStore } from '../../stores/authStore';
+import { backgroundAssetIsUsed } from '../../utils/tournamentRepository';
+import { Select } from '../../components/ui/Select';
+import { PrizeDistributionEditor } from './PrizeDistributionEditor';
+import type { TournamentPrizeConfiguration } from '../../types/tournamentPrizes';
+import { legacyPrizeConfiguration, validatePrizeConfiguration } from '../../utils/tournamentPrizes';
+
+import { clockStageName } from '../../utils/tournamentRegistration';
+import { BackgroundEditor } from './BackgroundEditor';
+import { defaultBackground, saveBackgroundFile, deleteBackgroundFile, validateBackground, type BackgroundDraft } from '../../utils/tournamentBackgrounds';
 
 interface TourFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  tourToEdit?: Tournament | null;
+  tourToEdit?: TournamentTemplate | null;
 }
 
 export const TourFormModal: React.FC<TourFormModalProps> = ({
@@ -18,16 +28,21 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
   onClose,
   tourToEdit,
 }) => {
-  const { createTournament, updateTournament } = useTournamentStore();
-  const { users, currentUser } = useAuthStore();
+  const { createTemplate, updateTemplate } = useTournamentTemplateStore();
+  const { currentUser } = useAuthStore();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startingChips, setStartingChips] = useState('20000');
   const [maxPlayers, setMaxPlayers] = useState('24');
-  const [scheduledStartTime, setScheduledStartTime] = useState(
-    new Date(Date.now() + 3600000).toISOString().slice(0, 16)
-  );
+  const [registrationEndStageId, setRegistrationEndStageId] = useState('');
+  const [tourBackground, setTourBackground] = useState<BackgroundDraft>({ config: defaultBackground() });
+  const [clockBackground, setClockBackground] = useState<BackgroundDraft>({ config: defaultBackground() });
+  const [backgroundBusy, setBackgroundBusy] = useState({ tour: false, clock: false });
+  const [saving, setSaving] = useState(false);
+  const [prizeConfiguration, setPrizeConfiguration] = useState<TournamentPrizeConfiguration>(() => ({ ...legacyPrizeConfiguration(), guaranteedPoints: 65, entriesThreshold: 30 }));
+  const prizeErrors = validatePrizeConfiguration(prizeConfiguration);
+
 
   const [structure, setStructure] = useState<BlindStructureConfig>({
     preBreakDurationMinutes: 20,
@@ -38,52 +53,48 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
       { id: 'stg-1', stageType: 'LEVEL', levelNumber: 1, smallBlind: 100, bigBlind: 100, ante: 0, durationMinutes: 20, name: 'Level 1' },
       { id: 'stg-2', stageType: 'LEVEL', levelNumber: 2, smallBlind: 100, bigBlind: 200, ante: 200, durationMinutes: 20, name: 'Level 2' },
       { id: 'stg-3', stageType: 'LEVEL', levelNumber: 3, smallBlind: 200, bigBlind: 400, ante: 400, durationMinutes: 20, name: 'Level 3' },
-      { id: 'stg-brk-1', stageType: 'BREAK', durationMinutes: 10, name: 'Break 1 - Giải Lao 10 Phút' },
+      { id: 'stg-brk-1', stageType: 'BREAK', durationMinutes: 10, name: 'Break 1 - Break 10 Phút' },
       { id: 'stg-4', stageType: 'LEVEL', levelNumber: 4, smallBlind: 300, bigBlind: 600, ante: 600, durationMinutes: 15, name: 'Level 4' },
       { id: 'stg-5', stageType: 'LEVEL', levelNumber: 5, smallBlind: 400, bigBlind: 800, ante: 800, durationMinutes: 15, name: 'Level 5' },
       { id: 'stg-6', stageType: 'LEVEL', levelNumber: 6, smallBlind: 500, bigBlind: 1000, ante: 1000, durationMinutes: 15, name: 'Level 6' },
-      { id: 'stg-brk-2', stageType: 'BREAK', durationMinutes: 15, name: 'Break 2 - Giải Lao 15 Phút' },
+      { id: 'stg-brk-2', stageType: 'BREAK', durationMinutes: 15, name: 'Break 2 - Break 15 Phút' },
       { id: 'stg-7', stageType: 'LEVEL', levelNumber: 7, smallBlind: 600, bigBlind: 1200, ante: 1200, durationMinutes: 15, name: 'Level 7' },
       { id: 'stg-8', stageType: 'LEVEL', levelNumber: 8, smallBlind: 800, bigBlind: 1600, ante: 1600, durationMinutes: 15, name: 'Level 8' },
       { id: 'stg-9', stageType: 'LEVEL', levelNumber: 9, smallBlind: 1000, bigBlind: 2000, ante: 2000, durationMinutes: 15, name: 'Level 9' },
     ],
   });
 
-  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [error, setError] = useState('');
 
-  // Players list from authStore
-  const players = users.filter((u) => u.role === 'PLAYER');
 
   useEffect(() => {
     if (tourToEdit) {
+      setPrizeConfiguration(structuredClone(tourToEdit.prizeConfiguration || legacyPrizeConfiguration()));
+      setTourBackground({ config: tourToEdit.tourBackground || defaultBackground() });
+      setClockBackground({ config: tourToEdit.clockBackground || defaultBackground() });
       setName(tourToEdit.name);
       setDescription(tourToEdit.description || '');
       setStartingChips(String(tourToEdit.startingChips));
       setMaxPlayers(String(tourToEdit.maxPlayers));
-      setScheduledStartTime(tourToEdit.scheduledStartTime.slice(0, 16));
       setStructure(tourToEdit.structure);
-      setSelectedPlayerIds(tourToEdit.participants.map((p) => p.playerId));
+      setRegistrationEndStageId(tourToEdit.buyInCloseBreakId || tourToEdit.structure.stages[tourToEdit.structure.stages.findIndex((stage) => stage.id === tourToEdit.registrationEndStageId) - 1]?.id || '');
     } else {
+      setPrizeConfiguration(currentUser?.role === 'ADMIN' ? { ...legacyPrizeConfiguration(), guaranteedPoints: 65, entriesThreshold: 30 } : legacyPrizeConfiguration());
+      setTourBackground({ config: defaultBackground() });
+      setClockBackground({ config: defaultBackground() });
       setName('ROYAL POKER CUP #WEEKEND');
       setDescription('Giải đấu cúp cuối tuần với cấu trúc Blind chuyên nghiệp.');
       setStartingChips('20000');
       setMaxPlayers('24');
-      setSelectedPlayerIds(players.slice(0, 4).map((p) => p.id));
+      setRegistrationEndStageId('');
     }
     setError('');
-  }, [tourToEdit, isOpen]);
+    setBackgroundBusy({ tour: false, clock: false });
+  }, [tourToEdit, isOpen, currentUser?.role]);
 
-  const togglePlayer = (pId: string) => {
-    if (selectedPlayerIds.includes(pId)) {
-      setSelectedPlayerIds(selectedPlayerIds.filter((id) => id !== pId));
-    } else {
-      setSelectedPlayerIds([...selectedPlayerIds, pId]);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving || backgroundBusy.tour || backgroundBusy.clock) return;
     setError('');
 
     if (!name.trim()) {
@@ -91,55 +102,83 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
       return;
     }
     const chips = Number(startingChips);
-    if (isNaN(chips) || chips <= 0) {
-      setError('Số chip xuất phát phải lớn hơn 0');
+    if (!Number.isSafeInteger(chips) || chips <= 0) {
+      setError('Số chip xuất phát phải là số nguyên dương hợp lệ');
+      return;
+    }
+    if (!Number.isSafeInteger(Number(maxPlayers)) || Number(maxPlayers) < 1) {
+      setError('Giới hạn người chơi phải là số nguyên dương.'); return;
+    }
+
+    if (Object.keys(prizeErrors).length) { setError(Object.values(prizeErrors)[0]); return; }
+
+    if (registrationEndStageId && !structure.stages.some((stage) => stage.id === registrationEndStageId && stage.stageType === 'BREAK')) {
+      setError('Break đóng Buy-in không còn trong cấu trúc. Vui lòng chọn lại.');
       return;
     }
 
-    const participantsData = selectedPlayerIds.map((id) => {
-      const p = users.find((u) => u.id === id);
-      return {
-        playerId: id,
-        playerName: p?.fullName || 'Người chơi',
-        phone: p?.phone,
+    const newAssets: string[] = [];
+    setSaving(true);
+    try {
+      const prepare = async (draft: BackgroundDraft) => {
+        if (!draft.file) { validateBackground(draft.config); return draft.config; }
+        const assetId = await saveBackgroundFile(draft.file);
+        newAssets.push(assetId);
+        return { source: 'upload' as const, assetId, fileName: draft.file.name.slice(0, 255), overlay: draft.config.overlay };
       };
-    });
-
-    if (tourToEdit) {
-      updateTournament(tourToEdit.id, {
-        name: name.trim(),
-        description: description.trim(),
-        startingChips: chips,
-        maxPlayers: Number(maxPlayers) || 24,
-        scheduledStartTime: new Date(scheduledStartTime).toISOString(),
-        structure,
-      });
-    } else {
-      createTournament({
-        name: name.trim(),
-        description: description.trim(),
-        startingChips: chips,
-        maxPlayers: Number(maxPlayers) || 24,
-        scheduledStartTime: new Date(scheduledStartTime).toISOString(),
-        structure,
-        participants: participantsData,
-        createdBy: currentUser?.fullName || 'Admin',
-      });
-    }
-
-    onClose();
+      const savedTourBackground = await prepare(tourBackground);
+      const savedClockBackground = await prepare(clockBackground);
+      if (tourToEdit) {
+        updateTemplate(tourToEdit.id, {
+          ...(currentUser?.role === 'ADMIN' ? { prizeConfiguration } : {}),
+          name: name.trim(),
+          description: description.trim(),
+          startingChips: chips,
+          maxPlayers: Number(maxPlayers) || 24,
+          structure,
+          ...(currentUser?.role === 'ADMIN' ? { buyInCloseBreakId: registrationEndStageId || undefined, registrationEndStageId: undefined } : {}),
+          tourBackground: savedTourBackground,
+          clockBackground: savedClockBackground,
+        });
+      } else {
+        createTemplate({
+          ...(currentUser?.role === 'ADMIN' ? { prizeConfiguration } : {}),
+          name: name.trim(),
+          description: description.trim(),
+          startingChips: chips,
+          maxPlayers: Number(maxPlayers) || 24,
+          structure,
+          buyInCloseBreakId: registrationEndStageId || undefined,
+          registrationEndStageId: undefined,
+          tourBackground: savedTourBackground,
+          clockBackground: savedClockBackground,
+          createdBy: currentUser?.fullName || 'Admin',
+        });
+      }
+      // Delete superseded uploads only after the tournament reference was committed.
+      for (const config of [tourToEdit?.tourBackground, tourToEdit?.clockBackground]) {
+        if (config?.source !== 'upload') continue;
+        const stillUsed = backgroundAssetIsUsed(config.assetId);
+        if (!stillUsed) void deleteBackgroundFile(config.assetId).catch(() => {});
+      }
+      onClose();
+    } catch (failure) {
+      await Promise.all(newAssets.map((assetId) => deleteBackgroundFile(assetId).catch(() => {})));
+      setError(failure instanceof Error ? failure.message : 'Không lưu được giải đấu. Vui lòng thử lại.');
+    } finally { setSaving(false); }
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => { if (!saving) onClose(); }}
       maxWidth="4xl"
-      title={tourToEdit ? 'Chỉnh Sửa Thông Tin Giải Đấu' : 'Tạo Giải Đấu Poker & Thiết Lập Blind'}
+      title={tourToEdit ? 'Chỉnh sửa mẫu giải' : 'Tạo mẫu giải đấu'}
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" aria-busy={saving}>
+        <fieldset disabled={saving} className="min-w-0 space-y-5">
         {/* Basic Tour Information */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
           <Input
             label="Tên giải đấu *"
             value={name}
@@ -147,17 +186,12 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
             placeholder="ROYAL POKER CUP #15..."
           />
 
-          <Input
-            label="Thời gian bắt đầu dự kiến *"
-            type="datetime-local"
-            value={scheduledStartTime}
-            onChange={(e) => setScheduledStartTime(e.target.value)}
-          />
+
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--component-gap)]">
           <Input
-            label="Số chip xuất phát (Chip khởi đầu) *"
+            label="Starting Stack *"
             type="number"
             value={startingChips}
             onChange={(e) => setStartingChips(e.target.value)}
@@ -165,7 +199,7 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
           />
 
           <Input
-            label="Số người chơi tối đa (Max Players)"
+            label="Số người chơi tối đa"
             type="number"
             value={maxPlayers}
             onChange={(e) => setMaxPlayers(e.target.value)}
@@ -180,50 +214,40 @@ export const TourFormModal: React.FC<TourFormModalProps> = ({
           placeholder="Mô tả thể thức Deepstack, thời gian đăng ký muộn..."
         />
 
-        {/* Participant Registration Picker */}
-        <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-slate-300">
-            Hội viên đăng ký tham gia ({selectedPlayerIds.length} người đã chọn):
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto p-2 bg-slate-900 border border-slate-800 rounded-xl">
-            {players.map((p) => {
-              const isSelected = selectedPlayerIds.includes(p.id);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => togglePlayer(p.id)}
-                  className={`p-2 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition-colors ${
-                    isSelected
-                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-medium'
-                      : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <span className="truncate">{p.fullName}</span>
-                  <span className="text-xs ml-1">{isSelected ? '✓' : '+'}</span>
-                </div>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[var(--component-gap)]">
+          <BackgroundEditor key={`tour-${tourToEdit?.id || 'new'}-${isOpen}`} label="Ảnh nền giải đấu" description="Ảnh bìa trên danh sách và phần quản lý giải. Không áp dụng cho đồng hồ."
+            value={tourBackground} onChange={setTourBackground} onBusyChange={(busy) => setBackgroundBusy((state) => ({ ...state, tour: busy }))} />
+          <BackgroundEditor key={`clock-${tourToEdit?.id || 'new'}-${isOpen}`} label="Ảnh nền đồng hồ" description="Hiển thị sau đồng hồ, Blind, Break, đăng ký và thống kê; hỗ trợ toàn màn hình TV."
+            value={clockBackground} onChange={setClockBackground} onBusyChange={(busy) => setBackgroundBusy((state) => ({ ...state, clock: busy }))} />
         </div>
 
         {/* Blind Structure Section */}
-        <div className="pt-2 border-t border-slate-800 space-y-2">
-          <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            Cấu Trúc Blind & Breaks (Blind Structure)
+        <div className="pt-2 border-t border-line space-y-2">
+          <h4 className="text-sm font-semibold text-content flex items-center gap-2">
+            Cấu trúc cược và Break
           </h4>
           <BlindStructureEditor value={structure} onChange={setStructure} />
+          <Select label="Tự động đóng Buy-in sau Break" value={registrationEndStageId} disabled={currentUser?.role !== 'ADMIN'} onChange={(event) => setRegistrationEndStageId(event.target.value)}
+            helperText="Buy-in tự đóng khi Break được chọn kết thúc, không cần bấm nút trên Clock. Thay đổi mẫu áp dụng cho phiên mới.">
+            <option value="">Không tự động đóng</option>
+            {registrationEndStageId && !structure.stages.some((stage) => stage.id === registrationEndStageId && stage.stageType === 'BREAK') && <option value={registrationEndStageId}>Break đã bị xóa — chọn lại</option>}
+            {structure.stages.filter((stage) => stage.stageType === 'BREAK').map((stage) => <option key={stage.id} value={stage.id}>{clockStageName(stage, structure.stages)}</option>)}
+          </Select>
         </div>
 
-        {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+        <PrizeDistributionEditor value={prizeConfiguration} onChange={setPrizeConfiguration} disabled={currentUser?.role !== 'ADMIN'} />
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        {error && <p role="alert" className="text-sm text-danger font-medium">{error}</p>}
+
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
           <Button variant="secondary" type="button" onClick={onClose}>
             Hủy Bỏ
           </Button>
-          <Button variant="gold" type="submit">
-            {tourToEdit ? 'Lưu Thay Đổi' : 'Khởi Tạo Giải Đấu'}
+          <Button variant="gold" type="submit" isLoading={saving} disabled={backgroundBusy.tour || backgroundBusy.clock || Object.keys(prizeErrors).length > 0}>
+            {tourToEdit ? 'Lưu Thay Đổi' : 'Tạo mẫu giải'}
           </Button>
         </div>
+        </fieldset>
       </form>
     </Modal>
   );

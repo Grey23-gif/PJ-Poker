@@ -60,14 +60,14 @@ export const AccountListPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-[var(--section-gap)] max-w-7xl mx-auto">
       {/* Title & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[var(--component-gap)]">
         <div>
-          <h1 className="text-2xl font-semibold text-white flex flex-wrap items-center gap-2">
+          <h1 className="page-title text-2xl font-semibold text-content flex flex-wrap items-center gap-2">
             Quản Lý Tài Khoản Hệ Thống
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-muted">
             Quản lý danh sách Quản trị viên, Thu ngân và Hội viên câu lạc bộ Poker
           </p>
         </div>
@@ -85,8 +85,8 @@ export const AccountListPage: React.FC = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-slate-800">
-        <div className="w-full sm:w-80">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-line">
+        <div className="min-w-0 w-full sm:w-72 sm:flex-1">
           <Input
             aria-label="Tìm theo họ tên, username, SĐT, email..."
               placeholder="Tìm theo họ tên, username, SĐT, email..."
@@ -97,13 +97,13 @@ export const AccountListPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Vai trò:</span>
+          <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+            <span className="text-muted">Vai trò:</span>
             <select
               aria-label="Lọc theo vai trò"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="bg-raised border border-line-strong text-content text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
             >
               <option value="ALL">Tất cả vai trò ({users.length})</option>
               <option value="ADMIN">Quản trị viên ({users.filter(u => u.role === 'ADMIN').length})</option>
@@ -112,13 +112,13 @@ export const AccountListPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">Trạng thái:</span>
+          <div className="flex flex-wrap items-center gap-1.5 max-w-full">
+            <span className="text-muted">Trạng thái:</span>
             <select
               aria-label="Lọc theo trạng thái"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
+              className="bg-raised border border-line-strong text-content text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
             >
               <option value="ALL">Tất cả</option>
               <option value="ACTIVE">Đang hoạt động</option>
@@ -131,9 +131,9 @@ export const AccountListPage: React.FC = () => {
       {/* Account Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Bảng tài khoản có thể cuộn" className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-surface text-slate-400 font-semibold border-b border-slate-800">
+              <thead className="bg-surface text-muted font-semibold border-b border-line">
                 <tr>
                   <th className="py-3 px-4">Tài khoản & Họ tên</th>
                   <th className="py-3 px-4">Liên hệ</th>
@@ -144,33 +144,33 @@ export const AccountListPage: React.FC = () => {
                   <th className="py-3 px-4 text-center">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-line/60">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-muted">
                       Không tìm thấy tài khoản nào phù hợp.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr key={user.id} className="hover:bg-raised/30 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <img
                             src={user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}
                             alt={user.fullName}
-                            className="w-8 h-8 rounded-full object-cover border border-slate-700"
+                            className="w-8 h-8 rounded-full object-cover border border-line-strong"
                           />
                           <div>
-                            <div className="font-bold text-slate-200">{user.fullName}</div>
-                            <div className="font-mono text-xs text-slate-400">@{user.username}</div>
+                            <div className="font-bold text-content">{user.fullName}</div>
+                            <div className="font-mono text-xs text-muted">@{user.username}</div>
                           </div>
                         </div>
                       </td>
 
                       <td className="py-3 px-4">
-                        <div className="text-slate-300">{user.phone}</div>
-                        <div className="text-xs text-slate-500">{user.email}</div>
+                        <div className="text-secondary">{user.phone}</div>
+                        <div className="text-xs text-muted">{user.email}</div>
                       </td>
 
                       <td className="py-3 px-4">
@@ -182,16 +182,16 @@ export const AccountListPage: React.FC = () => {
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5">
                               <StatusBadge status={user.playerStats.rankTier} />
-                              <span className="font-mono font-bold text-amber-400">
+                              <span className="font-mono font-bold text-warning">
                                 {formatNumber(user.playerStats.currentPoints)} điểm
                               </span>
                             </div>
-                            <div className="text-xs text-slate-400">
+                            <div className="text-xs text-muted">
                               Tour: {user.playerStats.toursWon} vô địch / {user.playerStats.totalToursPlayed} tham gia
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-500">Nhân viên nội bộ</span>
+                          <span className="text-muted">Nhân viên nội bộ</span>
                         )}
                       </td>
 
@@ -199,7 +199,7 @@ export const AccountListPage: React.FC = () => {
                         <StatusBadge status={user.status} />
                       </td>
 
-                      <td className="py-3 px-4 text-slate-400">
+                      <td className="py-3 px-4 text-muted">
                         {formatDate(user.createdAt)}
                       </td>
 
@@ -210,7 +210,7 @@ export const AccountListPage: React.FC = () => {
                               setUserToEdit(user);
                               setIsFormModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                            className="p-1.5 rounded-lg bg-raised hover:bg-raised text-secondary hover:text-content transition-colors"
                             title="Chỉnh sửa thông tin"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ export const AccountListPage: React.FC = () => {
 
                           <button
                             onClick={() => handleResetPassword(user)}
-                            className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-colors"
+                            className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-warning border border-amber-500/30 transition-colors"
                             title="Cấp lại mật khẩu mới"
                           >
                             <KeyRound className="w-3.5 h-3.5" />
@@ -229,8 +229,8 @@ export const AccountListPage: React.FC = () => {
                               onClick={() => setUserToToggle(user)}
                               className={`p-1.5 rounded-lg border transition-colors ${
                                 user.status === 'ACTIVE'
-                                  ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30'
-                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  ? 'bg-rose-500/10 hover:bg-rose-500/20 text-danger border-rose-500/30'
+                                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-success border-emerald-500/30'
                               }`}
                               title={user.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
                             >
@@ -287,31 +287,31 @@ export const AccountListPage: React.FC = () => {
         title="Cấp Lại Mật Khẩu Thành Công"
       >
         <div className="space-y-4 text-center py-2">
-          <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-full bg-amber-500/20 text-warning flex items-center justify-center mx-auto">
             <KeyRound className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-slate-100">
+            <h4 className="font-bold text-content">
               {resetPasswordResult?.user.fullName}
             </h4>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Mật khẩu tạm thời mới đã được tạo cho tài khoản{' '}
               <strong>@{resetPasswordResult?.user.username}</strong>
             </p>
           </div>
 
-          <div className="p-3 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between font-mono text-base font-bold text-emerald-400">
+          <div className="p-3 bg-field border border-line-strong rounded-xl flex items-center justify-between font-mono text-base font-bold text-success">
             <span>{resetPasswordResult?.pass}</span>
             <button
               onClick={() => copyToClipboard(resetPasswordResult?.pass || '')}
-              className="text-slate-400 hover:text-white p-1"
+              className="text-muted hover:text-content p-1"
               title="Sao chép mật khẩu"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             Vui lòng gửi mật khẩu này cho người dùng và yêu cầu đổi mật khẩu sau khi đăng nhập.
           </p>
 
